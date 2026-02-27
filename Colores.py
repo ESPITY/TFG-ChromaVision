@@ -1,10 +1,10 @@
+# Detección de colores
+
 import cv2
 import numpy as np
 
 
-# HSV -> Hue-X (0-180) Saturation-Y (0-255) Value (0-255)
-
-# Rango para detectar el color (HSV) -> Value (20-255) normalmente
+# HSV -> Hue-X (0-180) Saturation-Y (0-255) Value (0-255) -> Value (20-255) normalmente
 # Nombre, lower HSV, upper HSV, color BGR
 COLORS = [
     ["Rojo", np.array([0, 200, 20]), np.array([5, 255, 255]), (0, 0, 255)],
@@ -14,8 +14,10 @@ COLORS = [
     ["Negro", np.array([0, 0, 0]), np.array([180, 255, 30]), (0, 0, 0)]
 ]
 
-MIN_AREA = 500  # Tamaño mínimo del contorno de color detectado
+MIN_AREA = 10000  # Tamaño mínimo del contorno de color detectado
+IMG_SCALE = 0.4 # Ver las ventanas/frames a menor tamaño
 
+# Función de detección de color
 def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
     mask = cv2.inRange(frame_HSV, lower, upper) # Máscara del color
 
@@ -34,6 +36,7 @@ def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
     return mask
 
 
+print("Inciando webcam...")
 
 # Webcam
 stream =  cv2.VideoCapture(0)
@@ -41,6 +44,11 @@ stream =  cv2.VideoCapture(0)
 if not stream.isOpened():
     print("Error accediendo a la webcam")
     exit()
+
+# Configurar, fps, altura y ancho de frames de la webcam
+stream.set(cv2.CAP_PROP_FPS , 30.0)
+stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Obtener todos los frames
 while (True):
@@ -53,9 +61,11 @@ while (True):
 
     for name, lower, upper, colorBGR in COLORS:
         mask = detect_color(frame, frame_HSV, name, lower, upper, colorBGR)
+        mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Mask " + name, mask)
 
     # Mostrar webcam y máscara
+    frame = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
     cv2.imshow("Webcam", frame)
 
     if cv2.waitKey(1) == ord('q'):
