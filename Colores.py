@@ -11,11 +11,11 @@ COLORS = [
     ["Amarillo", np.array([20, 200, 20]), np.array([25, 255, 255]), (0, 255, 255)],
     ["Azul", np.array([105, 200, 20]), np.array([115, 255, 255]), (255, 0, 0)],
     ["Verde", np.array([40, 150, 20]), np.array([100, 255, 255]), (0, 255, 0)],
-    ["Negro", np.array([0, 0, 0]), np.array([180, 255, 30]), (0, 0, 0)]
+    ["Negro", np.array([0, 0, 0]), np.array([180, 255, 30]), (105, 105, 105)]
 ]
 
 MIN_AREA = 10000  # Tamaño mínimo del contorno de color detectado
-IMG_SCALE = 0.4 # Ver las ventanas/frames a menor tamaño
+IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 
 # Función de detección de color
 def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
@@ -29,9 +29,35 @@ def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
     if len(mask_contours) != 0:
         for mask_contour in mask_contours:
             if cv2.contourArea(mask_contour) > MIN_AREA: # El contorno tiene que tener un tamaño mínimo
-                x, y, w, h = cv2.boundingRect(mask_contour) # Coordenadas del rectángulo (esquina superior izq. e inferior der.)
-                cv2.rectangle(frame, pt1=(x, y), pt2=(x + w, y + h), color=colorBGR, thickness=3) # Dibujar rectángulo
-                cv2.putText(frame, name,(x, y-10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.7, color=colorBGR, thickness=2)
+                # 5. Centro con momentos
+                M = cv2.moments(mask_contour)
+                if M["m00"] == 0:
+                    continue
+
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+
+                # 6. Orientación
+                rect = cv2.minAreaRect(mask_contour)
+                (x, y), (w, h), angle = rect
+
+                # Ajuste de ángulo
+                if w < h:
+                    angle = angle + 90
+
+                 # 7. Dibujar resultados
+                box = cv2.boxPoints(rect)
+                box = np.intp(box)
+
+                cv2.drawContours(frame, [box], 0, colorBGR, 2)
+                cv2.circle(frame, (cx, cy), 5, colorBGR, -1)
+
+                texto = f"Pos: ({cx},{cy}) Ang: {int(angle)}"
+                cv2.putText(frame, texto, (cx - 50, cy - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colorBGR, 2)
+
+                #x, y, w, h = cv2.boundingRect(mask_contour) # Coordenadas del rectángulo (esquina superior izq. e inferior der.)
+                #cv2.rectangle(frame, pt1=(x, y), pt2=(x + w, y + h), color=colorBGR, thickness=3) # Dibujar rectángulo
+                #cv2.putText(frame, name,(x, y-10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.7, color=colorBGR, thickness=2)
     
     return mask
 
@@ -49,6 +75,10 @@ if not stream.isOpened():
 stream.set(cv2.CAP_PROP_FPS , 30.0)
 stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+#stream.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+#stream.set(cv2.CAP_PROP_FOCUS, 5)
+print(stream.get(cv2.CAP_PROP_FOCUS))
 
 # Obtener todos los frames
 while (True):
