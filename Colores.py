@@ -6,7 +6,7 @@ import numpy as np
 
 # Rango para detectar el color (HSV) -> Value (20-255) normalmente
 # Nombre, lower HSV, upper HSV, color BGR
-colors = [
+COLORS = [
     ["Rojo", np.array([0, 200, 20]), np.array([5, 255, 255]), (0, 0, 255)],
     ["Amarillo", np.array([20, 200, 20]), np.array([25, 255, 255]), (0, 255, 255)],
     ["Azul", np.array([105, 200, 20]), np.array([115, 255, 255]), (255, 0, 0)],
@@ -14,22 +14,7 @@ colors = [
     ["Negro", np.array([0, 0, 0]), np.array([180, 255, 30]), (0, 0, 0)]
 ]
 
-# Rojo: d50f07 - (2, 96.7, 83.5)
-# r_lower = np.array([0, 200, 20])
-# r_upper = np.array([5, 255, 255])
-# Amarillo: ffd322 - (48, 86, 100)
-# y_lower = np.array([20, 200, 20])
-# y_upper = np.array([25, 255, 255])
-# Azul: 0058b7 - (211, 100, 71)
-# b_lower = np.array([105, 200, 20])
-# b_upper = np.array([115, 255, 255])
-# Verde: 33823d - (128, 60.8, 51)
-# g_lower = np.array([40, 150, 20])
-# g_upper = np.array([100, 255, 255])
-# Negro: 141616 - (180, 9.1, 8.6)
-# n_lower = np.array([0, 0, 0])
-# n_upper = np.array([180, 255, 30])
-
+MIN_AREA = 500  # Tamaño mínimo del contorno de color detectado
 
 def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
     mask = cv2.inRange(frame_HSV, lower, upper) # Máscara del color
@@ -41,7 +26,7 @@ def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
     # Posición de los contornos (si hay)
     if len(mask_contours) != 0:
         for mask_contour in mask_contours:
-            if cv2.contourArea(mask_contour) > 500: # El contorno tiene que tener un tamaño mínimo
+            if cv2.contourArea(mask_contour) > MIN_AREA: # El contorno tiene que tener un tamaño mínimo
                 x, y, w, h = cv2.boundingRect(mask_contour) # Coordenadas del rectángulo (esquina superior izq. e inferior der.)
                 cv2.rectangle(frame, pt1=(x, y), pt2=(x + w, y + h), color=colorBGR, thickness=3) # Dibujar rectángulo
                 cv2.putText(frame, name,(x, y-10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.7, color=colorBGR, thickness=2)
@@ -53,6 +38,10 @@ def detect_color (frame, frame_HSV, name, lower, upper, colorBGR):
 # Webcam
 stream =  cv2.VideoCapture(0)
 
+if not stream.isOpened():
+    print("Error accediendo a la webcam")
+    exit()
+
 # Obtener todos los frames
 while (True):
     success, frame = stream.read()
@@ -62,7 +51,7 @@ while (True):
 
     frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
 
-    for name, lower, upper, colorBGR in colors:
+    for name, lower, upper, colorBGR in COLORS:
         mask = detect_color(frame, frame_HSV, name, lower, upper, colorBGR)
         cv2.imshow("Mask " + name, mask)
 
