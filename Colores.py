@@ -19,24 +19,24 @@ MIN_PIECE_AREA = 1000  # Tamaño mínimo del contorno de color detectado
 IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 
 def detect_base(frame_grey):
-    frame_grey = cv2.bilateralFilter(frame_grey, 20, 30, 30)
+    frame_grey  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
     edges = cv2.Canny(frame_grey, 10, 20)
+    # Gaussian Blur
 
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # CONTORNO
+    #contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #contours = sorted(contours, key=cv2.contourArea, reverse=True) [:10] # Ordenar todos los contornos por tamaño y seleccionar el más grande (slice list 10)
+    #biggest = biggest_contour(contours)
+    #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    #cv2.drawContours(edges, [biggest], -1, (0, 255, 0), 3)
 
-    edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-
-    if contours:
-        biggest = max(contours, key=cv2.contourArea)
-
-        if cv2.contourArea(biggest) > 1000:
-            rect = cv2.minAreaRect(biggest)
-            box = cv2.boxPoints(rect)
-            box = np.intp(box)
-            cv2.drawContours(edges_color, [box], -1, (0,255,0), 3)
-
-    # 🔥 SIEMPRE devolvemos imagen
-    return edges_color
+    lines = cv2.HoughLinesP(edges,1,np.pi/180,100,minLineLength=100,maxLineGap=10)
+    edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(edges, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    
+    return edges
 
 # Obtiene el contorno más grande con 4 esquinas
 def biggest_contour(contours):
