@@ -20,25 +20,32 @@ IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 
 def detect_base(frame_grey):
     frame_grey  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
-    edges = cv2.Canny(frame_grey, 10, 20)
-    # Gaussian Blur
+    #frame_grey = cv2.GaussianBlur(frame_grey,(5,5),0)
+    ret, otsu_binary = cv2.threshold(frame_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
+    edges = cv2.Canny(otsu_binary, 10, 20)
+
+    # kernel = np.ones((5, 5), np.uint8) 
+    # img_dilation = cv2.dilate(edges, kernel, iterations=1) 
+    #cv2.imshow("dialte", img_dilation)
 
     # CONTORNO
-    #contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #contours = sorted(contours, key=cv2.contourArea, reverse=True) [:10] # Ordenar todos los contornos por tamaño y seleccionar el más grande (slice list 10)
-    #biggest = biggest_contour(contours)
-    #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    #cv2.drawContours(edges, [biggest], -1, (0, 255, 0), 3)
+    # contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # contours = sorted(contours, key=cv2.contourArea, reverse=True) [:10] # Ordenar todos los contornos por tamaño y seleccionar el más grande (slice list 10)
+    # biggest = biggest_contour(contours)
+    # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    # cv2.drawContours(edges, [biggest], -1, (0, 255, 0), 3)
 
-    lines = cv2.HoughLinesP(edges,1,np.pi/180,100,minLineLength=100,maxLineGap=10)
+    # HOUGH LINES (4 líneas perpendiculares que delimitan la base. Las intersecciones son las 4 esquinas)
+    lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=100, minLineLength=100, maxLineGap=10)
     edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        cv2.line(edges, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            cv2.line(edges, (x1, y1), (x2, y2), (0, 255, 0), 2)
     
     return edges
 
-# Obtiene el contorno más grande con 4 esquinas
+# Obtiene el contorno más grande con 4 esquinas (contorno)
 def biggest_contour(contours):
     biggest = np.array([])  # contorno y área máxima
     max_area = 0
