@@ -21,31 +21,67 @@ BASE_SIZE_MM = 250  # Tamaño de la base
 MIN_PIECE_AREA = 1000  # Tamaño mínimo del contorno de color detectado
 IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 
-def detect_base(frame_grey):
+def detect_base(frame, frame_grey):
     frame_grey  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
     #frame_grey = cv2.GaussianBlur(frame_grey,(5,5),0)
     ret, otsu_binary = cv2.threshold(frame_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
     edges = cv2.Canny(otsu_binary, 10, 20)
 
-    # kernel = np.ones((5, 5), np.uint8) 
-    # img_dilation = cv2.dilate(edges, kernel, iterations=1) 
+    # Aumentar el grosor de los bordes
+    kernel = np.ones((3, 3), np.uint8) 
+    edges = cv2.dilate(edges, kernel, iterations=1) 
     #cv2.imshow("dialte", img_dilation)
 
     # CONTORNO
-    # contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # contours = sorted(contours, key=cv2.contourArea, reverse=True) [:10] # Ordenar todos los contornos por tamaño y seleccionar el más grande (slice list 10)
-    # biggest = biggest_contour(contours)
-    # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    # cv2.drawContours(edges, [biggest], -1, (0, 255, 0), 3)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True) [:10] # Ordenar todos los contornos por tamaño y seleccionar el más grande (slice list 10)
+    biggest = biggest_contour(contours)
+    edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    cv2.drawContours(edges, [biggest], -1, (0, 255, 0), 3)
 
     # HOUGH LINES (4 líneas perpendiculares que delimitan la base. Las intersecciones son las 4 esquinas)
-    lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=100, minLineLength=100, maxLineGap=10)
-    edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            cv2.line(edges, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=100, minLineLength=100, maxLineGap=10)
+    # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    # if lines is not None:
+    #     for line in lines:
+    #         x1, y1, x2, y2 = line[0]
+    #         cv2.line(edges, (x1, y1), (x2, y2), (0, 255, 0), 2)
     
+    if biggest.size == 0:
+        return edges
+
+    # ESQUINAS
+    points = biggest.reshape(4, 2)  # 4 listas con 2 cada una = 4 esquinas con X e Y
+    input_points = np.zeros((4, 2), dtype="float32")    # Array vacío de floats para las esquinas ordenadas
+
+    points_sum = points.sum(axis=1)                     # Sumamos coordenadas X e Y
+    input_points[0] = points[np.argmin(points_sum)]
+    input_points[3] = points[np.argmax(points_sum)]
+
+    points_diff = np.diff(points, axis=1)   
+    input_points[1] = points[np.argmin(points_diff)]
+    input_points[2] = points[np.argmax(points_diff)]
+
+    (top_left, top_right, bottom_right, bottom_left) = input_points
+    bottom_width = np.sqrt(((bottom_right[0] - bottom_left[0]) ** 2) + ((bottom_right[1] - bottom_left[1]) ** 2))
+    top_width = np.sqrt(((top_right[0] - top_left[0]) ** 2) + ((top_right[1] - top_left[1]) ** 2))
+    right_height = np.sqrt(((top_right[0] - bottom_right[0]) ** 2) + ((top_right[1] - bottom_right[1]) ** 2))
+    left_height = np.sqrt(((top_left[0] - bottom_left[0]) ** 2) + ((top_left[1] - bottom_left[1]) ** 2))
+
+    # Tamaño de la imagen de salida -> se podrían usar las dimensiones de la base, pero ahora se usa el aspect ratio 1:1
+    max_width = max(int(bottom_width), int(top_width))
+    # max_height = max(int(right_height), int(left_height))
+    max_height = int(max_width * 1)
+
+    # PERSPECTIVA
+    # Puntos deseados de la imagen final
+    converted_points = np.float32([[0, 0], [max_width, 0], [0, max_height], [max_width, max_height]])
+
+    # Transformacion de perspectiva
+    matrix = cv2.getPerspectiveTransform(input_points, converted_points)
+    framed = cv2.warpPerspective(frame, matrix, (max_width, max_height))
+    cv2.imshow("Framed", framed)
+
     return edges
 
 # Obtiene el contorno más grande con 4 esquinas (contorno)
@@ -58,7 +94,7 @@ def biggest_contour(contours):
         if area > 1000:
             perimeter = cv2.arcLength(c, True)  # Contorno cerrado
             approx = cv2.approxPolyDP(c, 0.012 * perimeter, True)   # Aproximarlo a otra forma (precisiónm, contorno cerrado)
-            if area > max_area and len(approx) == 4:   # Supera el a´rea máxima y tiene 4 esquinas
+            if area > max_area and len(approx) == 4:   # Supera el área máxima y tiene 4 esquinas
                 biggest = approx
                 max_area = area
     return biggest
@@ -136,7 +172,7 @@ while (True):
 
     # Detección de la base (contorno)
     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
-    base = detect_base(frame_grey)
+    base = detect_base(frame, frame_grey)
     cv2.imshow("Base", base)
 
     # Detección de las piezas (colores)
