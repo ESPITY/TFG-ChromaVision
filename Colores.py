@@ -26,6 +26,9 @@ def detect_base(frame, frame_grey):
     #frame_grey = cv2.GaussianBlur(frame_grey,(5,5),0)
     ret, otsu_binary = cv2.threshold(frame_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
     edges = cv2.Canny(otsu_binary, 10, 20)
+    cv2.imshow("OTSU Binary", otsu_binary)
+    binary = cv2.adaptiveThreshold(frame_grey, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY, 11, 2)
+    cv2.imshow("Adaptive Threshold", binary)
 
     # Aumentar el grosor de los bordes
     kernel = np.ones((3, 3), np.uint8) 
