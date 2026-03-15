@@ -49,6 +49,7 @@ def detect_base(frame, frame_grey):
 # Eliminar duplicados, conservar las líneas superiores (50 y 5º)
 def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
     unique_lines = []
+    unique_norm_lines = []  # líneas únicas normalizadas para comparar
 
     for line in lines:
         rho, theta = line[0]
@@ -64,7 +65,7 @@ def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
         is_similar = False
         
         # Buscar si hay una línea similar ya guardada
-        for other_rho, other_theta in unique_lines:
+        for other_rho, other_theta in unique_norm_lines:
             diff_rho = abs(rho - other_rho)
             diff_theta = abs(theta - other_theta)
             diff_theta = min(diff_theta, np.pi - diff_theta)
@@ -75,6 +76,7 @@ def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
         
         if not is_similar:
             unique_lines.append((orig_rho, orig_theta))
+            unique_norm_lines.append((rho, theta))
     
     return unique_lines
 
