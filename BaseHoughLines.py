@@ -9,7 +9,7 @@ def detect_base(frame, frame_grey):
     frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
     cv2.imshow("Blur", frame_blur)
 
-    ret, otsu_binary = cv2.threshold(frame_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
+    ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
     cv2.imshow("OTSU Binary", otsu_binary)
     edges = cv2.Canny(otsu_binary, 10, 20)
     cv2.imshow("Edges", edges)
@@ -23,12 +23,14 @@ def detect_base(frame, frame_grey):
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=150)
 
     if lines is not None:
+        unique_lines = hough_lines_duplicates(lines)
+
         print(f"Líneas detectadas: {len(lines)}")   # Array de r y theta
+        print(f"Líneas unicas: {len(unique_lines)}")   # Array de r y theta
 
-        for line in lines:  # (N, rho, theta)
-            rho, theta = line[0]
-            print(line)
-
+        #for line in lines:  # (N, rho, theta)
+            #rho, theta = line[0]
+        for rho, theta in unique_lines:
             a = np.cos(theta)
             b = np.sin(theta)
 
@@ -36,13 +38,45 @@ def detect_base(frame, frame_grey):
             y0 = b * rho    # rho * sen(tetha)
 
             # 1000 es la longitud de la línea
-            x1 = int(x0 + 1000 * (-b))    # (r * cos(theta) - 1000 * sin(theta))
-            y1 = int(y0 + 1000 * (a))     # (rs * in(theta) + 1000 * cos(theta))
+            x1 = int(x0 + 10000 * (-b))    # (r * cos(theta) - 1000 * sin(theta))
+            y1 = int(y0 + 10000 * (a))     # (rs * in(theta) + 1000 * cos(theta))
 
-            x2 = int(x0 - 1000 * (-b))    # (r * cos(theta) + 1000 * sin(theta))
-            y2 = int(y0 - 1000 * (a))     # (r * sin(theta) - 1000 * cos(theta))
+            x2 = int(x0 - 10000 * (-b))    # (r * cos(theta) + 1000 * sin(theta))
+            y2 = int(y0 - 10000 * (a))     # (r * sin(theta) - 1000 * cos(theta))
 
             cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+# Eliminar duplicados, conservar las líneas superiores (50 y 5º)
+def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
+    unique_lines = []
+
+    for line in lines:
+        rho, theta = line[0]
+
+        orig_rho, orig_theta = rho, theta
+        
+        # Normalizar: rho >= 0, theta [0, π)
+        if rho < 0:
+            rho = -rho
+            theta = theta - np.pi
+        theta = theta % np.pi
+
+        is_similar = False
+        
+        # Buscar si hay una línea similar ya guardada
+        for other_rho, other_theta in unique_lines:
+            diff_rho = abs(rho - other_rho)
+            diff_theta = abs(theta - other_theta)
+            diff_theta = min(diff_theta, np.pi - diff_theta)
+            
+            if diff_rho < umbral_rho and diff_theta < umbral_theta:
+                is_similar = True
+                break   # Ya existe una línea similar
+        
+        if not is_similar:
+            unique_lines.append((orig_rho, orig_theta))
+    
+    return unique_lines
 
 stream =  cv2.VideoCapture(0)
 
