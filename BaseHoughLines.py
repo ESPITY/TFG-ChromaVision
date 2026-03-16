@@ -1,12 +1,13 @@
-# HoughLine
+# Detección de base (HoughLines)
 import os
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 
 import cv2
 import numpy as np
 
+# Detecta la base
 def detect_base(frame, frame_grey):
-    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
+    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
     cv2.imshow("Blur", frame_blur)
 
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
@@ -19,14 +20,19 @@ def detect_base(frame, frame_grey):
     edges = cv2.dilate(edges, kernel, iterations=1)
     cv2.imshow("Edges", edges)
 
-    # HOUGH LINES (Resolución - rho: 1px, theta: 1º) (Threshold: mín de votos para considerar una línea)
+    # HOUGH LINES (Resolución - rho: 1px, theta: 1º) (Threshold: mín nº de intersecciones para considerar una línea)
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=150)
 
     if lines is not None:
-        unique_lines = hough_lines_duplicates(lines)
+        unique_lines = hough_lines_duplicates(lines)    # Eliminar líneas duplicadas
+        clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
 
         print(f"Líneas detectadas: {len(lines)}")   # Array de r y theta
         print(f"Líneas unicas: {len(unique_lines)}")   # Array de r y theta
+
+        if len(unique_lines) < 4:
+            print("Insuficientes líneas únicas")
+            return None
 
         #for line in lines:  # (N, rho, theta)
             #rho, theta = line[0]
@@ -46,7 +52,7 @@ def detect_base(frame, frame_grey):
 
             cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-# Eliminar duplicados, conservar las líneas superiores (50 y 5º)
+# Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
 def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
     unique_lines = []
     unique_norm_lines = []  # líneas únicas normalizadas para comparar
@@ -79,6 +85,28 @@ def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
             unique_norm_lines.append((rho, theta))
     
     return unique_lines
+
+# Agrupar líneas por ángulo según theta con kmeans
+def segmented_lines(lines, k=2):
+    # Ángulos [0, pi]
+    angles = np.array([theta for rho, theta in lines])
+    # Coordenadas del ángulo (multiplicado por 2)
+    pts = np.float32([[np.cos(2*theta), np.sin(2*theta)] for theta in angles])
+
+    # Criteria: type of termination criteria, max_iter, epsilon (required accuracy)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    flags = cv2.KMEANS_RANDOM_CENTERS   # Obtención de centros iniciales
+    attempts = 10
+    compactness, labels, centers = cv2.kmeans(pts, k, None, criteria, attempts,flags)
+
+    labels = labels.flatten()   # Array
+    clusters = [[] for _ in range(k)]   # [[], []]
+    # zip para recorrer dos listas a la vez y agrupar valores de cada una
+    for label, line in zip(labels, lines):
+        clusters[label].append(line)
+
+    return clusters
+
 
 stream =  cv2.VideoCapture(0)
 

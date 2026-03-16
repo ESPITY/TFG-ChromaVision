@@ -22,7 +22,7 @@ MIN_PIECE_AREA = 1000  # Tamaño mínimo del contorno de color detectado
 IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 
 def detect_base(frame, frame_grey):
-    frame_grey  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el sonido manteniendo bordes nítidos
+    frame_grey  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
     #frame_grey = cv2.GaussianBlur(frame_grey,(5,5),0)
     ret, otsu_binary = cv2.threshold(frame_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
     edges = cv2.Canny(otsu_binary, 10, 20)
