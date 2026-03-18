@@ -34,6 +34,9 @@ def detect_base(frame, frame_grey):
             print("Insuficientes líneas únicas")
             return None
 
+        # if len(cluster1) < 2 or len(cluster2) < 2:
+        #     return None
+
         #for line in lines:  # (N, rho, theta)
             #rho, theta = line[0]
 
@@ -111,6 +114,24 @@ def segmented_lines(lines, k=2):
         clusters[label].append(line)
 
     return clusters
+
+# Intersection de 2 lineas
+def intersection(line1, line2):
+    rho1, theta1 = line1
+    rho2, theta2 = line2
+
+    A = np.array([
+        [np.cos(theta1), np.sin(theta1)],
+        [np.cos(theta2), np.sin(theta2)]
+    ])
+
+    b = np.array([rho1, rho2])
+
+    x0, y0 = np.linalg.solve(A, b)
+    x0, y0 = int(np.round(x0)), int(np.round(y0))
+    
+    return [[x0, y0]]
+
 
 # Asignar color a cada cluster según theta (V = rojo | H = verde)
 def color_cluster_lines(clusters):
