@@ -36,21 +36,26 @@ def detect_base(frame, frame_grey):
 
         #for line in lines:  # (N, rho, theta)
             #rho, theta = line[0]
-        for rho, theta in unique_lines:
-            a = np.cos(theta)
-            b = np.sin(theta)
 
-            x0 = a * rho    # rho * cos(tetha)
-            y0 = b * rho    # rho * sen(tetha)
+        #for rho, theta in unique_lines:
 
-            # 1000 es la longitud de la línea
-            x1 = int(x0 + 10000 * (-b))    # (r * cos(theta) - 1000 * sin(theta))
-            y1 = int(y0 + 10000 * (a))     # (rs * in(theta) + 1000 * cos(theta))
+        cluster_colors = color_cluster_lines(clusters)
+        for cluster_color, cluster in zip(cluster_colors, clusters):
+            for rho, theta in cluster:
+                a = np.cos(theta)
+                b = np.sin(theta)
 
-            x2 = int(x0 - 10000 * (-b))    # (r * cos(theta) + 1000 * sin(theta))
-            y2 = int(y0 - 10000 * (a))     # (r * sin(theta) - 1000 * cos(theta))
+                x0 = a * rho    # rho * cos(tetha)
+                y0 = b * rho    # rho * sen(tetha)
 
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                # 1000 es la longitud de la línea
+                x1 = int(x0 + 10000 * (-b))    # (r * cos(theta) - 1000 * sin(theta))
+                y1 = int(y0 + 10000 * (a))     # (rs * in(theta) + 1000 * cos(theta))
+
+                x2 = int(x0 - 10000 * (-b))    # (r * cos(theta) + 1000 * sin(theta))
+                y2 = int(y0 - 10000 * (a))     # (r * sin(theta) - 1000 * cos(theta))
+
+                cv2.line(frame, (x1, y1), (x2, y2), cluster_color, 2)
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
 def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
@@ -106,6 +111,34 @@ def segmented_lines(lines, k=2):
         clusters[label].append(line)
 
     return clusters
+
+# Asignar color a cada cluster según theta (V = rojo | H = verde)
+def color_cluster_lines(clusters):
+    cluster_colors = []
+
+    for cluster in clusters:
+        # Comprobar cuantas lineas de cada grupo son verticales u horizontales
+        vertical_count = 0
+        horizontal_count = 0
+
+        for rho, theta in cluster:
+            if abs(np.sin(theta)) < 1e-6:  # Menor que 0 (evitar división por 0)
+                vertical_count += 1
+            else:
+                m = -np.cos(theta) / np.sin(theta)
+                if abs(m) > 1:
+                    vertical_count += 1
+                else:
+                    horizontal_count += 1
+
+        if vertical_count > horizontal_count:
+            cluster_colors.append((0, 0, 255))
+        elif horizontal_count > vertical_count:
+            cluster_colors.append((0, 255, 0))
+        else:
+            cluster_colors.append((0, 255, 255))
+            
+    return cluster_colors
 
 
 stream =  cv2.VideoCapture(0)
