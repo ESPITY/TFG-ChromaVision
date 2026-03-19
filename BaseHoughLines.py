@@ -11,6 +11,11 @@ def detect_base(frame, frame_grey):
     cv2.imshow("Blur", frame_blur)
 
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
+
+    # Morphological Operation - Opening (erosion/dilation) - Eliminar ruido
+    kernel = np.ones((5, 5), np.uint8)
+    otsu_binary = cv2.morphologyEx(otsu_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
+    
     cv2.imshow("OTSU Binary", otsu_binary)
     edges = cv2.Canny(otsu_binary, 10, 20)
     cv2.imshow("Edges", edges)
@@ -25,17 +30,36 @@ def detect_base(frame, frame_grey):
 
     if lines is not None:
         unique_lines = hough_lines_duplicates(lines)    # Eliminar líneas duplicadas
-        clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
 
+        if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
+            return None
+        
         print(f"Líneas detectadas: {len(lines)}")   # Array de r y theta
         print(f"Líneas unicas: {len(unique_lines)}")   # Array de r y theta
 
-        if len(unique_lines) < 4:
-            print("Insuficientes líneas únicas")
-            return None
+        clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
 
-        # if len(cluster1) < 2 or len(cluster2) < 2:
-        #     return None
+        if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
+            return None
+        
+        cluster1, cluster2 = clusters
+        print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
+        
+        if len(cluster1) < 2 or len(cluster2) < 2:  # Alguno de los dos clusters no tiene 2 líneas
+            return None
+        
+        # Ordenar de menor a mayor por rho
+        cluster1.sort(key=lambda line: line[0], reverse=False)
+        cluster2.sort(key=lambda line: line[0], reverse=False)
+
+        # Emparejar extremos (menor a mayor)
+        cluster1_pairs = [(cluster1[0], cluster1[-1])]
+        cluster2_pairs = [(cluster2[0], cluster2[-1])]
+
+        for cluster1_line1, cluster1_line2 in cluster1:
+            for cluster2_line1, cluster2_line in cluster2:
+                # comprobar líneas perpendiculares
+                pass
 
         #for line in lines:  # (N, rho, theta)
             #rho, theta = line[0]
@@ -61,7 +85,7 @@ def detect_base(frame, frame_grey):
                 cv2.line(frame, (x1, y1), (x2, y2), cluster_color, 2)
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
-def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
+def hough_lines_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5)):
     unique_lines = []
     unique_norm_lines = []  # líneas únicas normalizadas para comparar
 
@@ -80,11 +104,11 @@ def hough_lines_duplicates(lines, umbral_rho=50, umbral_theta=np.pi/36):
         
         # Buscar si hay una línea similar ya guardada
         for other_rho, other_theta in unique_norm_lines:
-            diff_rho = abs(rho - other_rho)
-            diff_theta = abs(theta - other_theta)
-            diff_theta = min(diff_theta, np.pi - diff_theta)
+            rho_diff = abs(rho - other_rho)
+            theta_diff = abs(theta - other_theta)
+            theta_diff = min(theta_diff, np.pi - theta_diff)
             
-            if diff_rho < umbral_rho and diff_theta < umbral_theta:
+            if rho_diff < rho_tolerance and theta_diff < theta_tolerance:
                 is_similar = True
                 break   # Ya existe una línea similar
         
@@ -115,7 +139,19 @@ def segmented_lines(lines, k=2):
 
     return clusters
 
-# Intersection de 2 lineas
+# Comprobar si 2 líneas son perpendiculares (margen de 10º)
+def perpendicular_lines(line1, line2, tolerance=np.radians(10)):
+    theta1 = line1[1]
+    theta2 = line2[1]
+    
+    theta_diff = abs(theta1 - theta2)
+    theta_diff = min(theta_diff, np.pi - theta_diff)  # Normalizar [0, pi/2]
+    
+    perp_diff = abs(theta_diff - np.pi/2)   # Resta 90º
+
+    return perp_diff < tolerance
+
+# Interseción de 2 lineas - REVISAR
 def intersection(line1, line2):
     rho1, theta1 = line1
     rho2, theta2 = line2
@@ -161,6 +197,8 @@ def color_cluster_lines(clusters):
             
     return cluster_colors
 
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 stream =  cv2.VideoCapture(0)
 
