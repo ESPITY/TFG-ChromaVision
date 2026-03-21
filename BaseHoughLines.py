@@ -4,6 +4,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 
 import cv2
 import numpy as np
+from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
 # Detecta la base
 def detect_base(frame, frame_grey):
@@ -28,61 +29,87 @@ def detect_base(frame, frame_grey):
     # HOUGH LINES (Resolución - rho: 1px, theta: 1º) (Threshold: mín nº de intersecciones para considerar una línea)
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=150)
 
-    if lines is not None:
-        unique_lines = hough_lines_duplicates(lines)    # Eliminar líneas duplicadas
+    if lines is None:
+        return None
+    
+    unique_lines = hough_lines_duplicates(lines)    # Eliminar líneas duplicadas
 
-        if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
-            return None
-        
-        print(f"Líneas detectadas: {len(lines)}")   # Array de r y theta
-        print(f"Líneas unicas: {len(unique_lines)}")   # Array de r y theta
+    if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
+        return None
+    
+    print(f"Líneas detectadas: {len(lines)}")   # Array de r y theta
+    print(f"Líneas unicas: {len(unique_lines)}")   # Array de r y theta
 
-        clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
+    clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
 
-        if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
-            return None
-        
-        cluster1, cluster2 = clusters
-        print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
-        
-        if len(cluster1) < 2 or len(cluster2) < 2:  # Alguno de los dos clusters no tiene 2 líneas
-            return None
-        
-        # Ordenar de menor a mayor por rho
-        cluster1.sort(key=lambda line: line[0], reverse=False)
-        cluster2.sort(key=lambda line: line[0], reverse=False)
+    if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
+        return None
+    
+    cluster1, cluster2 = clusters
+    print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
+    
+    if len(cluster1) < 2 or len(cluster2) < 2:  # Alguno de los dos clusters no tiene 2 líneas
+        return None
+    
+    # Ordenar de menor a mayor por rho
+    #cluster1.sort(key=lambda line: line[0], reverse=False)
+    #cluster2.sort(key=lambda line: line[0], reverse=False)
 
-        # Emparejar extremos (menor a mayor)
-        cluster1_pairs = [(cluster1[0], cluster1[-1])]
-        cluster2_pairs = [(cluster2[0], cluster2[-1])]
+    best_rectangle = None
+    max_area = 0
 
-        for cluster1_line1, cluster1_line2 in cluster1:
-            for cluster2_line1, cluster2_line in cluster2:
-                # comprobar líneas perpendiculares
-                pass
+    # Combinaciones de líneas (2 de cada cluster): recorre tofas las posibles
+    for (cl1_line1, cl1_line2) in combinations(cluster1, 2):
+        for (cl2_line1, cl2_line2) in combinations(cluster2, 2):
+            # Comprobar perpendicularidad
+            if not (perpendicular_lines(cl1_line1, cl2_line1) and 
+                    perpendicular_lines(cl1_line1, cl2_line2) and 
+                    perpendicular_lines(cl1_line2, cl2_line1) and 
+                    perpendicular_lines(cl1_line2, cl2_line2)):
+                continue
 
-        #for line in lines:  # (N, rho, theta)
-            #rho, theta = line[0]
+            # Esquinas
+            corner1 = intersection(cl1_line1, cl2_line1)
+            corner2 = intersection(cl1_line1, cl2_line2)
+            corner3 = intersection(cl1_line2, cl2_line1)
+            corner4 = intersection(cl1_line2, cl2_line2)
 
-        #for rho, theta in unique_lines:
+            if None in [corner1, corner2, corner3, corner4]:
+                continue
 
-        cluster_colors = color_cluster_lines(clusters)
-        for cluster_color, cluster in zip(cluster_colors, clusters):
-            for rho, theta in cluster:
-                a = np.cos(theta)
-                b = np.sin(theta)
+            corners = [corner1, corner2, corner3, corner4]
 
-                x0 = a * rho    # rho * cos(tetha)
-                y0 = b * rho    # rho * sen(tetha)
+            # Comprobar que las esquinas están dentro del frame
+            if not all(point_inside_frame(c, frame) for c in corners):
+                continue
 
-                # 1000 es la longitud de la línea
-                x1 = int(x0 + 10000 * (-b))    # (r * cos(theta) - 1000 * sin(theta))
-                y1 = int(y0 + 10000 * (a))     # (rs * in(theta) + 1000 * cos(theta))
+            corners_sorted = sort_corners(corners)  # Ordenar esquinas
+            area = rectangle_area(corners_sorted)   # Calcular área
+            
+            # Quedarse con el rectángulo de mayor área
+            if area > max_area:
+                max_area = area
+                best_rectangle = {
+                    'lines' : [cl1_line1, cl1_line2, cl2_line1, cl2_line2],
+                    'corners' : corners_sorted,
+                    'area' : area
+                }
 
-                x2 = int(x0 - 10000 * (-b))    # (r * cos(theta) + 1000 * sin(theta))
-                y2 = int(y0 - 10000 * (a))     # (r * sin(theta) - 1000 * cos(theta))
+    # draw_line(frame, cl1_line1)
+    # draw_line(frame, cl1_line2)
+    # draw_line(frame, cl2_line1)
+    # draw_line(frame, cl2_line2)
 
-                cv2.line(frame, (x1, y1), (x2, y2), cluster_color, 2)
+    #for line in lines:  # (N, rho, theta)
+        #rho, theta = line[0]
+
+    #for rho, theta in unique_lines:
+
+    # cluster_colors = color_cluster_lines(clusters)
+    # for cluster_color, cluster in zip(cluster_colors, clusters):
+    #     for line in cluster:
+    #         draw_line(frame, line, cluster_color, 2)
+
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
 def hough_lines_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5)):
@@ -139,7 +166,7 @@ def segmented_lines(lines, k=2):
 
     return clusters
 
-# Comprobar si 2 líneas son perpendiculares (margen de 10º)
+# Comprobar si 2 líneas son perpendiculares (margen de 10º) - REVISAR TOLERANCIA
 def perpendicular_lines(line1, line2, tolerance=np.radians(10)):
     theta1 = line1[1]
     theta2 = line2[1]
@@ -151,7 +178,7 @@ def perpendicular_lines(line1, line2, tolerance=np.radians(10)):
 
     return perp_diff < tolerance
 
-# Interseción de 2 lineas - REVISAR
+# Interseción de 2 lineas - REVISAR RETURN
 def intersection(line1, line2):
     rho1, theta1 = line1
     rho2, theta2 = line2
@@ -166,8 +193,59 @@ def intersection(line1, line2):
     x0, y0 = np.linalg.solve(A, b)
     x0, y0 = int(np.round(x0)), int(np.round(y0))
     
-    return [[x0, y0]]
+    return (x0, y0)
 
+# Comprobar si un punto está dentro de la imagen (esquina)
+def point_inside_frame(point, frame):
+    x, y = point
+    h, w = frame.shape[:2]
+    return 0 <= x < w and 0 <= y < h
+
+# Ordenar las esquinas de la base detectada (rectángulo) - sentido horario
+def sort_corners(corners):
+    points = np.array(corners, dtype="float32")
+
+    points_sum = points.sum(axis=1)                     # Sumamos coordenadas X e Y
+    top_left = points[np.argmin(points_sum)]
+    bottom_right = points[np.argmax(points_sum)]
+
+    points_diff = np.diff(points, axis=1)   
+    top_right = points[np.argmin(points_diff)]
+    bottom_left = points[np.argmax(points_diff)]
+
+    return [top_left, top_right, bottom_right, bottom_left]
+
+# Calcula el área del rectángulo
+def rectangle_area(corners):
+    width = np.linalg.norm(corners[1] - corners[0])
+    height = np.linalg.norm(corners[3] - corners[0])
+    
+    return width * height
+
+# Dibuja una línea infinita
+def draw_line(frame, line, color=(0, 0, 255), thickness=1):
+    rho, theta = line
+
+    a = np.cos(theta)
+    b = np.sin(theta)
+
+    x0 = a * rho    # rho * cos(tetha)
+    y0 = b * rho    # rho * sen(tetha)
+
+    # Longitud de la línea: hipotenusa según el teorema de Pitágoras
+    length = np.hypot(frame.shape[0], frame.shape[1])
+
+    # 1000 es la longitud de la línea
+    x1 = int(x0 + length * (-b))    # (r * cos(theta) - length * sin(theta))
+    y1 = int(y0 + length * (a))     # (rs * in(theta) + length * cos(theta))
+
+    x2 = int(x0 - length * (-b))    # (r * cos(theta) + length * sin(theta))
+    y2 = int(y0 - length * (a))     # (r * sin(theta) - length * cos(theta))
+
+    cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Asignar color a cada cluster según theta (V = rojo | H = verde)
 def color_cluster_lines(clusters):
@@ -204,10 +282,13 @@ stream =  cv2.VideoCapture(0)
 
 stream.set(cv2.CAP_PROP_FPS , 30.0)
 stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080) # REVISAR 1280x720 suficiente
 
 while (True):
     success, frame = stream.read()
+
+    if not success:
+        break
 
     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
     detect_base(frame, frame_grey)
