@@ -31,12 +31,12 @@ def detect_base(frame, frame_grey):
     if lines is None:
         return None
     
-    unique_lines = hough_lines_duplicates(lines)    # Eliminar líneas duplicadas
+    unique_lines = remove_line_duplicates(lines)    # Eliminar líneas duplicadas
 
     if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
         return None
 
-    clusters = segmented_lines(unique_lines)        # Agrupar líneas en dos grupos según theta
+    clusters = cluster_lines_by_angle(unique_lines)        # Agrupar líneas en dos grupos según theta
 
     if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
         return None
@@ -57,25 +57,22 @@ def detect_base(frame, frame_grey):
     for (cl1_line1, cl1_line2) in combinations(cluster1, 2):
         for (cl2_line1, cl2_line2) in combinations(cluster2, 2):
             # Comprobar perpendicularidad
-            if not (perpendicular_lines(cl1_line1, cl2_line1) and 
-                    perpendicular_lines(cl1_line1, cl2_line2) and 
-                    perpendicular_lines(cl1_line2, cl2_line1) and 
-                    perpendicular_lines(cl1_line2, cl2_line2)):
+            if not (are_lines_perpendicular(cl1_line1, cl2_line1) and 
+                    are_lines_perpendicular(cl1_line1, cl2_line2) and 
+                    are_lines_perpendicular(cl1_line2, cl2_line1) and 
+                    are_lines_perpendicular(cl1_line2, cl2_line2)):
                 continue
 
             # Esquinas
-            corner1 = intersection(cl1_line1, cl2_line1)
-            corner2 = intersection(cl1_line1, cl2_line2)
-            corner3 = intersection(cl1_line2, cl2_line1)
-            corner4 = intersection(cl1_line2, cl2_line2)
-
-            if None in [corner1, corner2, corner3, corner4]:    # REVISAR - None
-                continue
-
-            corners = [corner1, corner2, corner3, corner4]
-
-            # Comprobar que las esquinas están dentro del frame
-            if not all(point_inside_frame(c, frame) for c in corners):
+            corners = [
+                get_line_intersection(cl1_line1, cl2_line1),
+                get_line_intersection(cl1_line1, cl2_line2),
+                get_line_intersection(cl1_line2, cl2_line1),
+                get_line_intersection(cl1_line2, cl2_line2)
+            ]
+            
+            # Comprobar que todas las esquinas existen y que están dentro del frame
+            if None in corners or not all(is_point_inside_frame(c, frame) for c in corners):
                 continue
 
             corners_sorted = sort_corners(corners)  # Ordenar esquinas
@@ -111,7 +108,7 @@ def detect_base(frame, frame_grey):
 
     # Dibujar las líneas segmentadas en clusters (V = verde | H = rojo)
     print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
-    cluster_colors = color_cluster_lines(clusters)
+    cluster_colors = assign_cluster_colors(clusters)
     for cluster_color, cluster in zip(cluster_colors, clusters):
         for line in cluster:
             draw_line(frame, line, cluster_color, 2)
@@ -134,7 +131,7 @@ def detect_base(frame, frame_grey):
     return None
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
-def hough_lines_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5)):
+def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5)):
     unique_lines = []
     unique_norm_lines = []  # líneas únicas normalizadas para comparar
 
@@ -168,7 +165,7 @@ def hough_lines_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5
     return unique_lines
 
 # Agrupar líneas por ángulo según theta con kmeans
-def segmented_lines(lines, k=2):
+def cluster_lines_by_angle(lines, k=2):
     # Ángulos [0, pi]
     angles = np.array([theta for rho, theta in lines])
     # Coordenadas del ángulo (multiplicado por 2)
@@ -188,8 +185,8 @@ def segmented_lines(lines, k=2):
 
     return clusters
 
-# Comprobar si 2 líneas son perpendiculares (margen de 10º) - REVISAR TOLERANCIA
-def perpendicular_lines(line1, line2, tolerance=np.radians(10)):
+# Comprobar si 2 líneas son perpendiculares (margen de 5ª)
+def are_lines_perpendicular(line1, line2, tolerance=np.radians(5)):
     theta1 = line1[1]
     theta2 = line2[1]
     
@@ -200,8 +197,8 @@ def perpendicular_lines(line1, line2, tolerance=np.radians(10)):
 
     return perp_diff < tolerance
 
-# Interseción de 2 lineas - REVISAR RETURN
-def intersection(line1, line2):
+# Interseción de 2 lineas
+def get_line_intersection(line1, line2):
     rho1, theta1 = line1
     rho2, theta2 = line2
 
@@ -212,19 +209,21 @@ def intersection(line1, line2):
 
     b = np.array([rho1, rho2])
 
-    x0, y0 = np.linalg.solve(A, b)
-    #x0, y0 = int(np.round(x0)), int(np.round(y0))
-    
-    return (x0, y0)
+    try:
+        x0, y0 = np.linalg.solve(A, b)
+        #x0, y0 = int(np.round(x0)), int(np.round(y0))
+        return (float(x0), float(y0))
+    except:
+        return None
 
 # Comprobar si un punto está dentro de la imagen (esquina)
-def point_inside_frame(point, frame):
+def is_point_inside_frame(point, frame):
     x, y = point
     h, w = frame.shape[:2]
     return 0 <= x < w and 0 <= y < h
 
 # Ordenar las esquinas de la base detectada (rectángulo) - sentido horario
-def sort_corners(corners):
+def sort_corners_clockwise(corners):
     points = np.array(corners, dtype="float32")
 
     points_sum = points.sum(axis=1)                     # Sumamos coordenadas X e Y
@@ -270,7 +269,7 @@ def draw_line(frame, line, color=(0, 0, 255), thickness=1):
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Asignar color a cada cluster según theta (V = verde | H = rojo)
-def color_cluster_lines(clusters):
+def assign_cluster_colors(clusters):
     cluster_colors = []
 
     for cluster in clusters:
@@ -304,7 +303,7 @@ stream =  cv2.VideoCapture(0)
 
 stream.set(cv2.CAP_PROP_FPS , 30.0)
 stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080) # REVISAR 1280x720 suficiente
+stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 while (True):
     success, frame = stream.read()
