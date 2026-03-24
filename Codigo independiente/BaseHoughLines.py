@@ -1,4 +1,4 @@
-# Detección de base (HoughLines)
+# Detección de base (HoughLines) - Código independiente
 import os
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 
@@ -75,7 +75,7 @@ def detect_base(frame, frame_grey):
             if None in corners or not all(is_point_inside_frame(c, frame) for c in corners):
                 continue
 
-            corners_sorted = sort_corners(corners)  # Ordenar esquinas
+            corners_sorted = sort_corners_clockwise(corners)  # Ordenar esquinas
             area = rectangle_area(corners_sorted)   # Calcular área
             
             # Quedarse con el rectángulo de mayor área
