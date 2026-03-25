@@ -5,7 +5,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE
+from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE, BASE_SIZE_CM
 from color_detection import detect_color
 from base_detection import detect_base
 
@@ -73,9 +73,16 @@ while (True):
 
     # 2. Perspectiva/Warp
     frame_warped = None
+    cm_px_width = None
+    cm_px_height = None
     if base is not None:
         corners = base['corners']
         frame_warped = base_warp(frame.copy(), corners)
+        height_warp, width_warp = frame_warped.shape[:2]
+
+        # Conversión píxeles a cm
+        cm_px_width = float(BASE_SIZE_CM / width_warp)
+        cm_px_height = float(BASE_SIZE_CM / height_warp)
 
         frame_warped = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Warped", frame_warped)
@@ -83,8 +90,11 @@ while (True):
     # Detección de las piezas (colores)
     frame_colors = frame_warped if base is not None else frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
     frame_HSV = cv2.cvtColor(frame_colors, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
+
+    all_pieces = []
     for name, lower, upper, colorBGR in COLORS:
-        mask = detect_color(frame_colors, frame_HSV, name, lower, upper, colorBGR)
+        mask, pieces = detect_color(frame_colors, frame_HSV, name, lower, upper, colorBGR, cm_px_width, cm_px_height)
+        all_pieces.extend(pieces)
         #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         #cv2.imshow("Mask " + name, mask)
     frame_colors = cv2.resize(frame_colors, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
