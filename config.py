@@ -14,3 +14,4 @@ COLORS = [
 BASE_SIZE_MM = 250  # Tamaño de la base
 MIN_PIECE_AREA = 1000  # Tamaño mínimo del contorno de color detectado
 IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
+WARP_OUTPUT_SIZE = 800  # Tamaño del lado más largo de la imagen warp

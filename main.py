@@ -5,13 +5,13 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import COLORS, IMG_SCALE
+from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE
 from color_detection import detect_color
 from base_detection import detect_base
 
 
-#
-def base_framed_warp_perspective(frame, corners):
+# Warp de la perspectiva: imagen solo de la base adaptando las esquinas
+def base_warp(frame, corners, output_longest_side=WARP_OUTPUT_SIZE):
     (top_left, top_right, bottom_right, bottom_left) = corners
 
     width_top = np.linalg.norm(top_right - top_left)
@@ -20,11 +20,14 @@ def base_framed_warp_perspective(frame, corners):
     height_left = np.linalg.norm(bottom_left - top_left)
 
     # Tamaño de la imagen de salida (conservando la relación de aspecto)
-    output_width = int((width_top + width_bottom) / 2)
-    output_height = int((height_right + height_left) / 2)
+    avg_width = int((width_top + width_bottom) / 2)
+    avg_height = int((height_right + height_left) / 2)
 
-    # max(int(width_bottom), int(width_top))
-    # max(int(height_right), int(height_left))
+    if avg_width < 1 or avg_height < 1: # Evitar división por cero
+        return frame
+
+    scale = output_longest_side / max(avg_width, avg_height)
+    output_width, output_height = int(avg_width * scale), int(avg_height * scale)
 
     # Esquinas de la imagen final (sentido horario: TL, TR, BR, BL)
     output_corners = np.float32([[0, 0], [output_width - 1, 0], [output_width - 1, output_height - 1], [0, output_height - 1]])
@@ -63,25 +66,22 @@ while (True):
     # 1. Detección de la base (HoughLines)
     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
     frame_base = frame.copy()
-    base = detect_base(frame_base, frame_grey)  # REVISAR - Caso None para detectar colorees frame normal y si no warped
+    base = detect_base(frame_base, frame_grey)
 
     frame_base = cv2.resize(frame_base, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
     cv2.imshow("Base", frame_base)
 
     # 2. Perspectiva/Warp
+    frame_warped = None
     if base is not None:
         corners = base['corners']
-        frame_warped = base_framed_warp_perspective(frame.copy(), corners)
+        frame_warped = base_warp(frame.copy(), corners)
 
         frame_warped = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Warped", frame_warped)
 
     # Detección de las piezas (colores)
-    if base is not None:
-        frame_colors = frame_warped
-    else:
-        frame_colors = frame.copy()
-
+    frame_colors = frame_warped if base is not None else frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
     frame_HSV = cv2.cvtColor(frame_colors, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
     for name, lower, upper, colorBGR in COLORS:
         mask = detect_color(frame_colors, frame_HSV, name, lower, upper, colorBGR)
