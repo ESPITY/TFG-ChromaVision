@@ -128,7 +128,7 @@ def detect_base(frame, frame_grey, debug=False):
     return best_rectangle
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
-def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(5)):
+def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(10)):
     unique_lines = []
     unique_norm_lines = []  # líneas únicas normalizadas para comparar
 

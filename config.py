@@ -11,7 +11,8 @@ COLORS = [
     ["Negro", np.array([0, 0, 0]), np.array([180, 255, 30]), (105, 105, 105)]
 ]
 
-BASE_SIZE_CM = 25.5  # Tamaño de la base
+BASE_WIDTH_CM = 25.5   # Ancho real de la base en cm
+BASE_HEIGHT_CM = 25.5  # Alto real de la base en cm
 MIN_PIECE_AREA = 1000  # Tamaño mínimo del contorno de color detectado
 IMG_SCALE = 1 # Ver las ventanas/frames a menor tamaño (0.4)
 WARP_OUTPUT_SIZE = 800  # Tamaño del lado más largo de la imagen warp

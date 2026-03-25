@@ -5,7 +5,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE, BASE_SIZE_CM
+from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
 from color_detection import detect_color
 from base_detection import detect_base
 
@@ -81,11 +81,11 @@ while (True):
         height_warp, width_warp = frame_warped.shape[:2]
 
         # Conversión píxeles a cm
-        cm_px_width = float(BASE_SIZE_CM / width_warp)
-        cm_px_height = float(BASE_SIZE_CM / height_warp)
+        cm_px_width = float(BASE_WIDTH_CM / width_warp)
+        cm_px_height = float(BASE_HEIGHT_CM / height_warp)
 
-        frame_warped = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-        cv2.imshow("Warped", frame_warped)
+        frame_warped_show = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
+        cv2.imshow("Warped", frame_warped_show)
 
     # Detección de las piezas (colores)
     frame_colors = frame_warped if base is not None else frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
@@ -97,12 +97,12 @@ while (True):
         all_pieces.extend(pieces)
         #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         #cv2.imshow("Mask " + name, mask)
-    frame_colors = cv2.resize(frame_colors, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Colores", frame_colors)
+    frame_colors_show = cv2.resize(frame_colors, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
+    cv2.imshow("Colores", frame_colors_show)
 
     # Mostrar webcam
-    frame = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Webcam", frame)
+    frame_show = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
+    cv2.imshow("Webcam", frame_show)
 
     if cv2.waitKey(1) == ord('q'):
         break
