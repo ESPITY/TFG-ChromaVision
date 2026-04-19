@@ -5,8 +5,8 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import COLORS, IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
-from color_detection import detect_color
+from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
+from color_detection import detect_all_colors
 from base_detection import detect_base
 
 
@@ -64,9 +64,8 @@ while (True):
         break
 
     # 1. Detección de la base (HoughLines)
-    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
     frame_base = frame.copy()
-    base = detect_base(frame_base, frame_grey)
+    base = detect_base(frame_base)
 
     frame_base = cv2.resize(frame_base, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
     cv2.imshow("Base", frame_base)
@@ -89,14 +88,8 @@ while (True):
 
     # Detección de las piezas (colores)
     frame_colors = frame_warped if base is not None else frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
-    frame_HSV = cv2.cvtColor(frame_colors, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
+    pieces = detect_all_colors(frame_colors, cm_px_width, cm_px_height)
 
-    all_pieces = []
-    for name, lower, upper, colorBGR in COLORS:
-        mask, pieces = detect_color(frame_colors, frame_HSV, name, lower, upper, colorBGR, cm_px_width, cm_px_height)
-        all_pieces.extend(pieces)
-        #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-        #cv2.imshow("Mask " + name, mask)
     frame_colors_show = cv2.resize(frame_colors, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
     cv2.imshow("Colores", frame_colors_show)
 

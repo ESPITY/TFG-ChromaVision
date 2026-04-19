@@ -7,7 +7,8 @@ import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
 # Detecta la base
-def detect_base(frame, frame_grey, debug=False):
+def detect_base(frame, debug=False):
+    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
     frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
 
