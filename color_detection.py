@@ -54,6 +54,7 @@ def detect_pieces_contours (frame, masks, cm_px=None, debug=False):
                 # Imprimir posición en px o cm dependiendo de si se detectó la base (siempre será px)
                 center_cm = (cx * cm_px[0], cy * cm_px[1]) if cm_px is not None else None
 
+                # POSICIÓN EN CM O CELDA?
                 pieces.append({
                     "name": name,
                     "center_px": (cx, cy),

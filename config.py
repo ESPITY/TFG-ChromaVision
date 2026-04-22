@@ -18,5 +18,4 @@ IMG_SCALE = 1               # Ver las ventanas/frames a menor tamaño (0.4)
 WARP_OUTPUT_SIZE = 800      # Tamaño del lado más largo de la imagen warp
 GRID_WIDTH = 16              # 16x16 celdas (base 32x32)
 GRID_HEIGHT = 16              # 16x16 celdas (base 32x32)
-#MIN_PIXELS_PER_CELL = 50    # umbral mínimo de píxeles de un color en una celda para considerarla ocupada
-PERCENT_FILLED_CELL = 0.7    # Porcentaje de relleno de color de la celda
+PERCENT_FILLED_CELL = 0.65    # Porcentaje de relleno de color de la celda para considerarla ocupada
