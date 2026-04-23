@@ -8,6 +8,7 @@ import numpy as np
 from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
 from color_detection import get_masks, detect_pieces_contours, detect_pieces_grid
 from base_detection import detect_base
+from udp import UDP_socket
 
 
 # Warp de la perspectiva: imagen solo de la base adaptando las esquinas
@@ -56,6 +57,8 @@ stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 #stream.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 #stream.set(cv2.CAP_PROP_FOCUS, 5)
 
+udp = UDP_socket()    # Instanciar un socket UDP para enviar las piezas
+
 # Obtener todos los frames
 while (True):
     success, frame = stream.read()
@@ -90,6 +93,8 @@ while (True):
         frame_warped_show = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Warped", frame_warped_show)
 
+        if pieces:
+            udp.send_pieces(pieces)
     else:
         # Detección de las piezas (colores)
         frame_colors = frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
@@ -106,5 +111,6 @@ while (True):
     if cv2.waitKey(1) == ord('q'):
         break
 
+udp.close_socket()
 stream.release()
 cv2.destroyAllWindows()

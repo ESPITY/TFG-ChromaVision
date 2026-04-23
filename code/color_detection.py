@@ -52,7 +52,10 @@ def detect_pieces_contours (frame, masks, cm_px=None, debug=False):
                 colorBGR = next((c[3] for c in COLORS if c[0] == name), (0,0,0))
 
                 # Imprimir posición en px o cm dependiendo de si se detectó la base (siempre será px)
-                center_cm = (cx * cm_px[0], cy * cm_px[1]) if cm_px is not None else None
+                center_cm = (
+                    round(cx * cm_px[0], 2),
+                    round(cy * cm_px[1], 2)
+                ) if cm_px is not None else None
 
                 # POSICIÓN EN CM O CELDA?
                 pieces.append({
@@ -119,8 +122,8 @@ def detect_pieces_grid(frame, masks, cm_px, debug=False):
                 cx = int((col + 0.5) * cell_w)
                 cy = int((row + 0.5) * cell_h)
                 # Conversión a cm
-                x_cm = cx * cm_px[0]
-                y_cm = cy * cm_px[1]
+                x_cm = round(cx * cm_px[0], 2)
+                y_cm = round(cy * cm_px[1], 2)
 
                 colorBGR = next((c[3] for c in COLORS if c[0] == best_color), (0, 0, 0))
                 pieces.append({
