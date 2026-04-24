@@ -8,7 +8,7 @@ import numpy as np
 from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
 from color_detection import get_masks, detect_pieces_contours, detect_pieces_grid
 from base_detection import detect_base
-from udp import UDP_socket
+from udp_sender import UDP_socket
 
 
 # Warp de la perspectiva: imagen solo de la base adaptando las esquinas
