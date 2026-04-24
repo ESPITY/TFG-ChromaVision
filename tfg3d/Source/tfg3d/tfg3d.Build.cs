@@ -2,13 +2,11 @@
 
 using UnrealBuildTool;
 
-public class tfg3d : ModuleRules
-{
-	public tfg3d(ReadOnlyTargetRules Target) : base(Target)
-	{
+public class tfg3d : ModuleRules {
+	public tfg3d(ReadOnlyTargetRules Target) : base(Target)	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Sockets", "Networking" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
