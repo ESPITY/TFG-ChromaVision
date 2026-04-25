@@ -54,7 +54,11 @@ bool AUDPReceiver::StartUDPReceiver() {
 
 void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt) {
     // Convertir los datos recibidos a FString (UTF8)
-    FString ReceivedData = FString(UTF8_TO_TCHAR(Message->GetData()));
+    //FString ReceivedData = FString(UTF8_TO_TCHAR(Message->GetData()));
+
+    int32 NumBytes = Message->Num();
+    const uint8* RawData = Message->GetData();
+    FString ReceivedData = FString(NumBytes, UTF8_TO_TCHAR(reinterpret_cast<const char*>(RawData)));
 
     AsyncTask(ENamedThreads::GameThread, [this, ReceivedData]() {
             ProcessMessage(ReceivedData);
@@ -62,12 +66,60 @@ void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4End
 }
 
 // Parsear el JSON
-void AUDPReceiver::ProcessMessage(const FString& Message) {
+void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
     // Mostrar el mensaje en pantalla
     if (GEngine) {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, Message);
+        //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, JsonRaw);
     }
-    UE_LOG(LogTemp, Log, TEXT("Mensaje recibido: %s"), *Message);
+    //UE_LOG(LogTemp, Log, TEXT("Mensaje recibido: %s"), *JsonRaw);
+
+
+    // Almacenará el objeto JSON en un puntero compartido
+    TSharedPtr<FJsonObject> JsonParsed;
+    // Lee el mensaje
+    TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonRaw);
+
+    // Desserializar (convertir texto a JSON)
+    if (!FJsonSerializer::Deserialize(JsonReader, JsonParsed) || !JsonParsed.IsValid()) {
+        //FString ExampleString = JsonParsed->GetStringField("exampleString");
+
+        UE_LOG(LogTemp, Warning, TEXT("JSON inválido: %s"), *JsonRaw);
+        return;
+    }
+
+    // Extraer el PiecesArray
+    const TArray<TSharedPtr<FJsonValue>> *PiecesArray;
+    if (!JsonParsed->TryGetArrayField(TEXT("pieces"), PiecesArray)) {
+        UE_LOG(LogTemp, Warning, TEXT("No se encontró el campo 'pieces'"));
+        return;
+    }
+
+    // Recorrer cada elemento del PiecesArray
+    TArray<FPieceData> PiecesStruct;
+    for (const TSharedPtr<FJsonValue> &PieceValue : *PiecesArray) {
+        // Cada elemento es un objeto JSON (color, x, y)
+        const TSharedPtr<FJsonObject>* PieceObj;
+        if (!PieceValue->TryGetObject(PieceObj))
+            continue;
+
+        // Guardar el objeto JSON como un elemento del struct - Si el campo no existe, dejan el valor sin cambiar (0 o vacío)
+        FPieceData Piece;
+        (*PieceObj)->TryGetStringField(TEXT("color"), Piece.Color);
+        (*PieceObj)->TryGetNumberField(TEXT("x"), Piece.X);
+        (*PieceObj)->TryGetNumberField(TEXT("y"), Piece.Y);
+
+        // Guardar la pieza en el array final
+        PiecesStruct.Add(Piece);
+    }
+
+    // Si no se ha añadido ninguna pieza salimos
+    if (PiecesStruct.Num() == 0) {
+        UE_LOG(LogTemp, Warning, TEXT("No se ha recibido ninguna pieza"));
+        return;
+    }
+
+    // Llamar al evento del BP pasándole el array de estructuras
+    OnPiecesReceived(PiecesStruct);
 }
 
 void AUDPReceiver::StopUDPReceiver() {

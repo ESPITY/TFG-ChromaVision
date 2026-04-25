@@ -6,7 +6,7 @@ public class tfg3d : ModuleRules {
 	public tfg3d(ReadOnlyTargetRules Target) : base(Target)	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Sockets", "Networking" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Sockets", "Networking", "Json" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

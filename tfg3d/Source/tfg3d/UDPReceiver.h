@@ -5,6 +5,21 @@
 #include "Networking.h"
 #include "UDPReceiver.generated.h"
 
+// Struct de 
+USTRUCT(BlueprintType)
+struct FPieceData {
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category = "Piece")
+    FString Color;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Piece")
+    float X;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Piece")
+    float Y;
+};
+
 UCLASS()
 class TFG3D_API AUDPReceiver : public AActor {
     GENERATED_BODY()
@@ -16,8 +31,6 @@ protected:
     virtual void BeginPlay() override;
 
 public:
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
     //------------------------ VARIABLES ------------------------
     // Iniciar el UDPReceiver en el BeginPlay
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
@@ -48,14 +61,17 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UDP")
     void StopUDPReceiver();
 
-    // Callback que se ejecuta cuando llegan datos (en hilo secundario)
-    void OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt);
+    UFUNCTION(BlueprintImplementableEvent, Category = "UDP")
+    void OnPiecesReceived(const TArray<FPieceData>& Pieces);
 
-
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
     FSocket* Socket;
     FUdpSocketReceiver* UDPReceiver;
+
+    // Callback que se ejecuta cuando llegan datos (en hilo secundario)
+    void OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt);
 
     // Procesa el mensaje (en hilo principal)
     void ProcessMessage(const FString& Message);
