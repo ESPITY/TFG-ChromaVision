@@ -1,6 +1,5 @@
 #include "UDPReceiver.h"
 #include "Async/Async.h"
-#include "Common/UdpSocketReceiver.h"
 #include "Json.h"
 
 AUDPReceiver::AUDPReceiver() {
@@ -12,18 +11,21 @@ AUDPReceiver::AUDPReceiver() {
 void AUDPReceiver::BeginPlay() {
     Super::BeginPlay();
 
-    bool bSuccess = StartUDPReceiver();
-    if (!bSuccess) {
-        UE_LOG(LogTemp, Error, TEXT("No se pudo iniciar el receptor UDP"));
+    if (bAutoStart) {
+        bool bSuccess = StartUDPReceiver();
+        if (!bSuccess) {
+            UE_LOG(LogTemp, Error, TEXT("No se pudo iniciar el receptor UDP"));
+        }
     }
 }
 
-void AUDPReceiver::Tick(float DeltaTime) {
-    Super::Tick(DeltaTime);
-}
-
 // BufferSize = 2 MB
-bool AUDPReceiver::StartUDPReceiver(const FString& SocketName, const FString& IP, const int32 Port, const int32 BufferSize) {
+bool AUDPReceiver::StartUDPReceiver() {
+    if (UDPReceiver) {
+        UE_LOG(LogTemp, Warning, TEXT("UDPReceiver ya está corriendo"));
+        return true;
+    }
+
     FIPv4Address Addr;
     FIPv4Address::Parse(IP, Addr);
     FIPv4Endpoint Endpoint(Addr, Port);
@@ -68,7 +70,7 @@ void AUDPReceiver::ProcessMessage(const FString& Message) {
     UE_LOG(LogTemp, Log, TEXT("Mensaje recibido: %s"), *Message);
 }
 
-void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason) {
+void AUDPReceiver::StopUDPReceiver() {
     if (UDPReceiver) {
         UDPReceiver->Stop();
         delete UDPReceiver;
@@ -80,6 +82,9 @@ void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason) {
         ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
         Socket = nullptr;
     }
+}
 
+void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason) {
     Super::EndPlay(EndPlayReason);
+    StopUDPReceiver();
 }

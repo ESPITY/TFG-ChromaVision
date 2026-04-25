@@ -6,8 +6,7 @@
 #include "UDPReceiver.generated.h"
 
 UCLASS()
-class TFG3D_API AUDPReceiver : public AActor
-{
+class TFG3D_API AUDPReceiver : public AActor {
     GENERATED_BODY()
 
 public:
@@ -17,18 +16,42 @@ protected:
     virtual void BeginPlay() override;
 
 public:
-    virtual void Tick(float DeltaTime) override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+    //------------------------ VARIABLES ------------------------
+    // Iniciar el UDPReceiver en el BeginPlay
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
+    bool bAutoStart = true;
+
+    // Nombre del socket
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
+    FString SocketName = TEXT("UDPReceiver");
+
+    // Dirección IP
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
+    FString IP = TEXT("127.0.0.1");
+
+    // Puerto UDP
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
+    int32 Port = 5005;
+
+    // Tamaño del buffer de recepción (en bytes)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
+    int32 BufferSize = 2097152; // 2 MB
+
+    //------------------------ FUNCIONES ------------------------
     // Inicia el receptor UDP (devuelve True si el receptor y el socket se iniciaron correctamente)
     UFUNCTION(BlueprintCallable, Category = "UDP")
-    bool StartUDPReceiver(const FString& SocketName = TEXT("UDPReceiver"),
-                            const FString& IP = TEXT("127.0.0.1"),
-                            int32 Port = 5005,
-                            int32 BufferSize = 2097152);    // 2*1024*1024 = 2MB
+    bool StartUDPReceiver();
+
+    // Detiene el UDPReceiver y libera el socket
+    UFUNCTION(BlueprintCallable, Category = "UDP")
+    void StopUDPReceiver();
 
     // Callback que se ejecuta cuando llegan datos (en hilo secundario)
     void OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt);
+
+
 
 private:
     FSocket* Socket;
