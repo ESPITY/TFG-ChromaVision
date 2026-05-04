@@ -1,6 +1,7 @@
 #include "UDPReceiver.h"
 #include "Async/Async.h"
 #include "Json.h"
+#include "PieceSpawnerComponent.h"
 
 AUDPReceiver::AUDPReceiver() {
     PrimaryActorTick.bCanEverTick = false;
@@ -96,7 +97,7 @@ void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
 
     // Recorrer cada elemento del PiecesArray
     TArray<FPieceData> PiecesStruct;
-    for (const TSharedPtr<FJsonValue> &PieceValue : *PiecesArray) {
+    for (const TSharedPtr<FJsonValue>& PieceValue : *PiecesArray) {
         // Cada elemento es un objeto JSON (color, x, y)
         const TSharedPtr<FJsonObject>* PieceObj;
         if (!PieceValue->TryGetObject(PieceObj))
@@ -112,14 +113,21 @@ void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
         PiecesStruct.Add(Piece);
     }
 
-    // Si no se ha añadido ninguna pieza salimos
+    // No se ha añadido ninguna pieza
     if (PiecesStruct.Num() == 0) {
         UE_LOG(LogTemp, Warning, TEXT("No se ha recibido ninguna pieza"));
-        return;
+        //return;
     }
 
     // Llamar al evento del BP pasándole el array de estructuras
     OnPiecesReceived(PiecesStruct);
+
+
+    // Si existe el componente PieceSpawnerComponent actualizarlo
+    UPieceSpawnerComponent* PieceSpawner = FindComponentByClass<UPieceSpawnerComponent>();
+    if (PieceSpawner) {
+        PieceSpawner->UpdatePieces(PiecesStruct);
+    }
 }
 
 void AUDPReceiver::StopUDPReceiver() {

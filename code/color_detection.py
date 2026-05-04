@@ -6,7 +6,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import cv2
 import numpy as np
 
-from config import COLORS, MIN_PIECE_AREA, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL   #, IMG_SCALE
+from config import COLORS, MIN_PIECE_AREA, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, IMG_SCALE
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
@@ -121,15 +121,23 @@ def detect_pieces_grid(frame, masks, cm_px, debug=False):
                 # Centro de la celda en píxeles
                 cx = int((col + 0.5) * cell_w)
                 cy = int((row + 0.5) * cell_h)
-                # Conversión a cm
+
+                # Centro de la celda en píxeles en cm (conversión)
                 x_cm = round(cx * cm_px[0], 2)
                 y_cm = round(cy * cm_px[1], 2)
+
+                # Posición de la pieza en la cuadrícula (quitarlo si se prefieren cm)
+                cell_width_cm = BASE_WIDTH_CM / GRID_WIDTH
+                cell_height_cm = BASE_HEIGHT_CM / GRID_HEIGHT
+                cell_x = int(x_cm / cell_width_cm)
+                cell_y = int(y_cm / cell_height_cm)
 
                 colorBGR = next((c[3] for c in COLORS if c[0] == best_color), (0, 0, 0))
                 pieces.append({
                     "name": best_color,
                     "center_px": (cx, cy),
                     "center_cm": (x_cm, y_cm),
+                    "cell": (cell_x, cell_y),
                     "angle": 0,
                     "colorBGR": colorBGR
                 })

@@ -93,8 +93,8 @@ while (True):
         frame_warped_show = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Warped", frame_warped_show)
 
-        if pieces:
-            udp.send_pieces(pieces)
+        #if pieces:
+        udp.send_pieces(pieces)
     else:
         # Detección de las piezas (colores)
         frame_colors = frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective

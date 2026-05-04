@@ -13,16 +13,16 @@ class UDP_socket:
     
     # Envía la lista de piezas por UDP en formato JSON
     def send_pieces(self, pieces):
-        if not pieces:
-            return
+        # if not pieces:
+        #     return
         
         # JSON
         data = {
             "pieces": [
                 {
                     "color": p["name"],
-                    "x": p["center_cm"][0],
-                    "y": p["center_cm"][1],
+                    "x": p["cell"][0],
+                    "y": p["cell"][1],
                 }
                 for p in pieces
             ]

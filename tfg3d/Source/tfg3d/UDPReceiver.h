@@ -5,6 +5,8 @@
 #include "Networking.h"
 #include "UDPReceiver.generated.h"
 
+class UPieceSpawnerComponent;   // Forward Declaration
+
 // Struct de 
 USTRUCT(BlueprintType)
 struct FPieceData {
@@ -14,10 +16,12 @@ struct FPieceData {
     FString Color;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    float X;
+    //float X;
+    int32 X;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    float Y;
+    //float Y;
+    int32 Y;
 };
 
 UCLASS()
