@@ -16,23 +16,23 @@ public:
 
 public:
     // Mapeo Color pieza -> Actor (configurable en editor)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pieces Spawner")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     TMap<FString, TSubclassOf<AActor>> ColorToActor;
 
     // Tamaño de celda en unidades Unreal
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pieces Spawner")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     float CellSize = 100.0f;
 
     // Altura Z a la que spawnear
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pieces Spawner")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     float SpawnHeight = 0.0f;
 
     // Actualiza el nivel a partir del array de piezas
-    UFUNCTION(BlueprintCallable, Category = "Pieces Spawner")
+    UFUNCTION(BlueprintCallable, Category = "Piece Spawner")
     void UpdatePieces(const TArray<FPieceData>& Pieces);
 
     // Limpia todas las piezas spawneadas
-    UFUNCTION(BlueprintCallable, Category = "Pieces Spawner")
+    UFUNCTION(BlueprintCallable, Category = "Piece Spawner")
     void ClearAllPieces();
 
 private:
