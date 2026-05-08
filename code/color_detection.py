@@ -6,18 +6,20 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import cv2
 import numpy as np
 
-from config import COLORS, MIN_PIECE_AREA, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, IMG_SCALE
+from config import COLORS, COLORS_LOCK, MIN_PIECE_AREA, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM, IMG_SCALE
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
     frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
+    cv2.imshow("HSV", frame_HSV)
     masks = {}
-    for name, lower, upper, _ in COLORS:
-        mask = cv2.inRange(frame_HSV, lower, upper)
-        masks[name] = mask
+    with COLORS_LOCK:
+        for name, lower, upper, _ in COLORS:
+            mask = cv2.inRange(frame_HSV, lower, upper)
+            masks[name] = mask
 
-        #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-        #cv2.imshow("Mask " + name, mask)
+            mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
+            cv2.imshow("Mask " + name, mask)
     return masks
 
 # Detección de piezas por contornos (colores)
@@ -49,7 +51,8 @@ def detect_pieces_contours (frame, masks, cm_px=None, debug=False):
 
                 box = cv2.boxPoints(rect)
                 box = np.intp(box)
-                colorBGR = next((c[3] for c in COLORS if c[0] == name), (0,0,0))
+                with COLORS_LOCK:
+                    colorBGR = next((c[3] for c in COLORS if c[0] == name), (0,0,0))
 
                 # Imprimir posición en px o cm dependiendo de si se detectó la base (siempre será px)
                 center_cm = (
@@ -132,7 +135,8 @@ def detect_pieces_grid(frame, masks, cm_px, debug=False):
                 cell_x = int(x_cm / cell_width_cm)
                 cell_y = int(y_cm / cell_height_cm)
 
-                colorBGR = next((c[3] for c in COLORS if c[0] == best_color), (0, 0, 0))
+                with COLORS_LOCK:
+                    colorBGR = next((c[3] for c in COLORS if c[0] == best_color), (0, 0, 0))
                 pieces.append({
                     "name": best_color,
                     "center_px": (cx, cy),

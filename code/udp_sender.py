@@ -5,7 +5,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
 # Clase para crear un socket UDP y poder reutilizarlo (en lugar de crear/cerrar uno por cada envío)
-class UDP_socket:
+class UDP_SENDER:
     def __init__(self, ip="127.0.0.1", port=5005):
         self.ip = ip
         self.port = port

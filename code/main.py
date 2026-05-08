@@ -5,10 +5,12 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
+from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM, COLORS, COLORS_LOCK
 from color_detection import get_masks, detect_pieces_contours, detect_pieces_grid
 from base_detection import detect_base
-from udp_sender import UDP_socket
+from udp_sender import UDP_SENDER
+from udp_receiver import UDP_RECEIVER
+import threading
 
 
 # Warp de la perspectiva: imagen solo de la base adaptando las esquinas
@@ -57,7 +59,11 @@ stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 #stream.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 #stream.set(cv2.CAP_PROP_FOCUS, 5)
 
-udp = UDP_socket()    # Instanciar un socket UDP para enviar las piezas
+udp_sender = UDP_SENDER()    # Instanciar un socket UDP para enviar las piezas
+udp_receiver = UDP_RECEIVER()
+# Iniciar receptor UDP en un hilo separado para que la cámara siga funcionando
+hilo_receptor = threading.Thread(target=udp_receiver.start_listening, daemon=True)
+hilo_receptor.start()
 
 # Obtener todos los frames
 while (True):
@@ -94,7 +100,7 @@ while (True):
         cv2.imshow("Warped", frame_warped_show)
 
         #if pieces:
-        udp.send_pieces(pieces)
+        udp_sender.send_pieces(pieces)
     else:
         # Detección de las piezas (colores)
         frame_colors = frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
@@ -108,9 +114,15 @@ while (True):
     frame_show = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
     cv2.imshow("Webcam", frame_show)
 
+    with COLORS_LOCK:
+        print(COLORS)
+        print("\n")
+
     if cv2.waitKey(1) == ord('q'):
         break
 
-udp.close_socket()
+udp_sender.close_socket()
+udp_receiver.close_socket()
+
 stream.release()
 cv2.destroyAllWindows()

@@ -86,11 +86,11 @@ def detect_base(frame, debug=False):
 
     # DIBUJAR Y DEBUGGEAR
     if best_rectangle is None:
-        print("\nBASE NO DETECTADA")
+        #print("\nBASE NO DETECTADA")
         cv2.putText(frame, "Base NO detectada", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         return None
 
-    print("\nBASE DETECTADA")
+   #print("\nBASE DETECTADA")
     cv2.putText(frame, "Base detectada", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     if debug:
