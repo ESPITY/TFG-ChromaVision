@@ -96,7 +96,8 @@ while (True):
         #if pieces:
         udp.send_pieces(pieces)
 
-    if cv2.waitKey(1) == ord('q'):
+    # Cierre de todas las ventanas pulsando la tecla Escape (27) o pinchando en la X de alguna de las dos ventanas
+    if cv2.waitKey(1) == 27 or cv2.getWindowProperty("Base", cv2.WND_PROP_VISIBLE) < 1 or cv2.getWindowProperty("Piezas", cv2.WND_PROP_VISIBLE) < 1:
         break
 
 udp.close_socket()
