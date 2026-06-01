@@ -163,5 +163,6 @@ def draw_pieces_grid(frame, pieces, draw_grid=True):
     # Dibujar piezas
     for p in pieces:
         cx, cy = p["center_px"]
-        cv2.circle(frame, (cx, cy), 6, p["colorBGR"], -1)
-        cv2.putText(frame, p["name"], (cx-20, cy-15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, p["colorBGR"], 2)
+        cv2.circle(frame, (cx, cy), 10, p["colorBGR"], -1)
+        cv2.circle(frame, (cx, cy), 10, (0, 0, 0), 2)
+        #cv2.putText(frame, p["name"], (cx-20, cy-15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, p["colorBGR"], 2)

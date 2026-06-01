@@ -87,11 +87,11 @@ def detect_base(frame, debug=False):
     # DIBUJAR Y DEBUGGEAR
     if best_rectangle is None:
         print("\nBASE NO DETECTADA")
-        cv2.putText(frame, "Base NO detectada", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(frame, "Base NO detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         return None
 
     print("\nBASE DETECTADA")
-    cv2.putText(frame, "Base detectada", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.putText(frame, "Base detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     if debug:
         # 1. Dibujar todas las líneas que detecta HoughLines - Gris
@@ -124,7 +124,7 @@ def detect_base(frame, debug=False):
     for i, corner in enumerate(corners):
         corner_int = (int(np.round(corner[0])), int(np.round(corner[1])))
         cv2.circle(frame, corner_int, 8, (255, 200, 0), -1)
-        cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        #cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     
     return best_rectangle
 

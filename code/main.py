@@ -91,7 +91,7 @@ while (True):
         pieces = detect_pieces_grid(frame_warped, masks, cm_px, debug=True)
 
         frame_warped_show = cv2.resize(frame_warped, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-        cv2.imshow("Warped", frame_warped_show)
+        cv2.imshow("Piezas", frame_warped_show)
 
         #if pieces:
         udp.send_pieces(pieces)
