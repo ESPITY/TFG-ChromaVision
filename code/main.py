@@ -96,10 +96,6 @@ while (True):
         #if pieces:
         udp.send_pieces(pieces)
 
-    # Mostrar webcam
-    frame_show = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Webcam", frame_show)
-
     if cv2.waitKey(1) == ord('q'):
         break
 
