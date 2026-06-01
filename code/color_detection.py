@@ -6,7 +6,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import cv2
 import numpy as np
 
-from config import COLORS, MIN_PIECE_AREA, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, IMG_SCALE
+from config import COLORS, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, IMG_SCALE
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
@@ -19,74 +19,6 @@ def get_masks(frame):
         #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
         #cv2.imshow("Mask " + name, mask)
     return masks
-
-# Detección de piezas por contornos (colores)
-def detect_pieces_contours (frame, masks, cm_px=None, debug=False):
-    pieces = []
-
-    # Obtener la posición del "objeto" (contornos) y dibujar un cuadrado alrededor
-    # Buscar contornos en la máscara (coordenadas y relación entre ellos)
-    for name, mask in masks.items():
-        mask_contours, _  = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
-        
-        for mask_contour in mask_contours:
-            if cv2.contourArea(mask_contour) > MIN_PIECE_AREA: # El contorno tiene que tener un tamaño mínimo
-                # Centro (momentos)
-                M = cv2.moments(mask_contour)
-                if M["m00"] == 0:
-                    continue
-
-                cx = int(M["m10"] / M["m00"])
-                cy = int(M["m01"] / M["m00"])
-
-                # Orientación
-                rect = cv2.minAreaRect(mask_contour)
-                (x, y), (w, h), angle = rect
-
-                # Ajuste de ángulo
-                if w < h:
-                    angle += 90
-
-                box = cv2.boxPoints(rect)
-                box = np.intp(box)
-                colorBGR = next((c[3] for c in COLORS if c[0] == name), (0,0,0))
-
-                # Imprimir posición en px o cm dependiendo de si se detectó la base (siempre será px)
-                center_cm = (
-                    round(cx * cm_px[0], 2),
-                    round(cy * cm_px[1], 2)
-                ) if cm_px is not None else None
-
-                # POSICIÓN EN CM O CELDA?
-                pieces.append({
-                    "name": name,
-                    "center_px": (cx, cy),
-                    "center_cm": center_cm,
-                    "angle": angle,             # QUITARLO?, NO ES FIABLE
-                    "colorBGR": colorBGR,
-                    "box": box              # Dibujar el contorno
-                })
-
-    if debug:
-        draw_pieces_contours(frame, pieces)
-    
-    return pieces
-
-# Dibuja el rectángulo de cada pieza, su centro y su información
-def draw_pieces_contours(frame, pieces):
-    for p in pieces:
-        if p.get("box") is not None:
-            cv2.drawContours(frame, [p['box']], 0, p['colorBGR'], 2)
-
-        cv2.circle(frame, p['center_px'], 5, p['colorBGR'], -1)
-
-        # Imprime el nombre pero puede ser la posición en px o cm, sustituir el nombre por texto
-        # if p.get("center_cm") is not None:
-        #     texto = f"Pos: ({p['center_cm'][0]:.2f}, {p['center_cm'][1]:.2f})"
-        # else:
-        #     texto = f"Pos: ({p['center_px'][0]:.2f}, {p['center_px'][1]:.2f})"
-
-        cv2.putText(frame, p['name'], (p['center_px'][0] - 50, p['center_px'][1] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, p["colorBGR"], 2)
 
 # Detecta las piezas en cada celda de la cuadrícula
 def detect_pieces_grid(frame, masks, cm_px, debug=False):    

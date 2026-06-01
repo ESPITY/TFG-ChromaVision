@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from config import IMG_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
-from color_detection import get_masks, detect_pieces_contours, detect_pieces_grid
+from color_detection import get_masks, detect_pieces_grid
 from base_detection import detect_base
 from udp_sender import UDP_socket
 
@@ -95,14 +95,6 @@ while (True):
 
         #if pieces:
         udp.send_pieces(pieces)
-    else:
-        # Detección de las piezas (colores)
-        frame_colors = frame.copy()   # Si no se detecta la base se usará el frame sin warp perspective
-        masks = get_masks(frame)
-        pieces = detect_pieces_contours(frame_colors, masks, None, debug=True)
-
-        frame_colors_show = cv2.resize(frame_colors, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
-        cv2.imshow("Colores", frame_colors_show)
 
     # Mostrar webcam
     frame_show = cv2.resize(frame, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
