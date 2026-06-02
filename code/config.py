@@ -1,25 +1,110 @@
 # Config
+import sys
+import os
 import numpy as np
+import json
+    
+# Valores de configuración por defecto
+DEFAULT_CONFIG = {
+    # HSV -> Hue-X (0-180) Saturation-Y (0-255) Value (0-255) -> Value (20-255) normalmente
+    # Color: Nombre, lower HSV, upper HSV, color BGR
+    "COLORS": [
+        ["Rojo", [0, 200, 20], [10, 255, 255], [0, 0, 255]],
+        ["Amarillo", [15, 180, 20], [25, 255, 255], [0, 255, 255]],
+        ["Azul", [100, 200, 20], [120, 255, 255], [255, 190, 0]],
+        ["Verde", [40, 150, 20], [100, 255, 255], [0, 255, 0]],
+        ["Negro", [0, 0, 0], [179, 255, 40], [120, 120, 120]],
+        ["Naranja", [8, 150, 120], [20, 255, 255], [0, 125, 255]],
+        ["Rosa", [120, 30, 130], [180, 90, 255], [190, 130, 250]]
+    ],
+    "WINDOW_SCALE": 1.0,            # Ver las ventanas/frames a menor tamaño (0.4)
+    "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen warp
+    "GRID_WIDTH": 16,               # 16x16 celdas (base 32x32)
+    "GRID_HEIGHT": 16,
+    "PERCENT_FILLED_CELL": 0.6,     # Porcentaje de relleno de color de la celda para considerarla ocupada
+    "MIN_BASE_AREA_RATIO": 0.05,    # % mínimo del frame que debe ocupar la base (5%)
+    "SHOW_PIECES_GRID": True,       # Mostrar la cuadrícula de la ventana "Piezas"
+    "UDP_IP": "127.0.0.1",          # IP de la conexión por socket UDP
+    "UDP_PORT": 5005                # Puerto de la conexión por socket UDP
+}
 
-# HSV -> Hue-X (0-180) Saturation-Y (0-255) Value (0-255) -> Value (20-255) normalmente
-# Color: Nombre, lower HSV, upper HSV, color BGR
-COLORS = [
-    ["Rojo", np.array([0, 200, 20]), np.array([10, 255, 255]), (0, 0, 255)],
-    ["Amarillo", np.array([15, 180, 20]), np.array([25, 255, 255]), (0, 255, 255)],
-    ["Azul", np.array([100, 200, 20]), np.array([120, 255, 255]), (255, 190, 0)],
-    ["Verde", np.array([40, 150, 20]), np.array([100, 255, 255]), (0, 255, 0)],
-    ["Negro", np.array([0, 0, 0]), np.array([179, 255, 40]), (120, 120, 120)],
-    ["Naranja", np.array([8, 150, 120]), np.array([20, 255, 255]), (0, 125, 255)],
-    ["Rosa", np.array([120, 30, 130]), np.array([180, 90, 255]), (190, 130, 250)]
-]
 
-WINDOW_SCALE = 1                # Ver las ventanas/frames a menor tamaño (0.4)
-WARP_OUTPUT_SIZE = 800          # Tamaño del lado más largo de la imagen warp
-GRID_WIDTH = 16                 # 16x16 celdas (base 32x32)
-GRID_HEIGHT = 16                # 16x16 celdas (base 32x32)
-PERCENT_FILLED_CELL = 0.6       # Porcentaje de relleno de color de la celda para considerarla ocupada
-MIN_BASE_AREA_RATIO = 0.05      # % mínimo del frame que debe ocupar la base (5%)
-SHOW_PIECES_GRID = True         # Mostrar la cuadrícula de la ventana "Piezas"
+# Guardar la configuración en un JSON
+def save_config(config_path, data):
+    # Escribir cada color en una línea
+    colors_lines = []
+    for color in data["COLORS"]:
+        color_json = json.dumps(color, separators=(', ', ': '))
+        colors_lines.append("        " + color_json)  # Indentación
+    colors_block = "[\n" + ",\n".join(colors_lines) + "\n    ]"
 
-UDP_IP = "127.0.0.1"            # IP de la conexión por socket UDP
-UDP_PORT = 5005                 # Puerto de la conexión por socket UDP
+    # Formatear el resto de parámetros
+    other_data = {key: value for key, value in data.items() if key != "COLORS"}
+    other_data_json = json.dumps(other_data, indent=4, ensure_ascii=False)
+
+    # JSON final: juntar COLORS y el resto de parámetros detnro de llaves
+    final_json = "{\n" + '    "COLORS": ' + colors_block + ",\n" + other_data_json[1:]
+
+    # Guardar el JSON final en "config.json"
+    with open(config_path, "w", encoding="utf-8") as file:
+        file.write(final_json)
+
+# Asigna las variables del diccionario de config.json
+def apply_config(config_dict):
+    global COLORS, WINDOW_SCALE, WARP_OUTPUT_SIZE, GRID_WIDTH, GRID_HEIGHT
+    global PERCENT_FILLED_CELL, MIN_BASE_AREA_RATIO, SHOW_PIECES_GRID
+    global UDP_IP, UDP_PORT
+
+    COLORS = []
+    for color in config_dict["COLORS"]:
+        name = color[0]
+        lowerHSV = np.array(color[1])
+        upperHSV = np.array(color[2])
+        colorBGR = tuple(color[3])
+        COLORS.append([name, lowerHSV, upperHSV, colorBGR])
+
+    WINDOW_SCALE = float(config_dict["WINDOW_SCALE"])
+    WARP_OUTPUT_SIZE = int(config_dict["WARP_OUTPUT_SIZE"])
+    GRID_WIDTH = int(config_dict["GRID_WIDTH"])
+    GRID_HEIGHT = int(config_dict["GRID_HEIGHT"])
+    PERCENT_FILLED_CELL = float(config_dict["PERCENT_FILLED_CELL"])
+    MIN_BASE_AREA_RATIO = float(config_dict["MIN_BASE_AREA_RATIO"])
+    SHOW_PIECES_GRID = bool(config_dict["SHOW_PIECES_GRID"])
+    UDP_IP = str(config_dict["UDP_IP"])
+    UDP_PORT = int(config_dict["UDP_PORT"])
+
+# Carga la configuración desde config.json, o lo crea con los valores por defecto si no existe o no es válido
+def load_config():
+    # Obtener la ruta de "config.json" sumándole la dirección del script/.exe ejecutado
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, "config.json")
+
+    # Intentar leer el archivo existente
+    try:
+        with open(config_path, "r", encoding="utf-8") as file:
+            config_dict = json.load(file)
+
+        # Comprobar si los datos leídos tienen estructura de diccionario
+        if not isinstance(config_dict, dict):
+            raise ValueError("Estructura incorrecta")
+        apply_config(config_dict)   # Lanzará un error si los valores no son correctos
+
+    # Si algo falla
+    except Exception as e:
+        if os.path.exists(config_path):
+            print(f"Configuración inválida ({e}) => Usando valores por defecto")
+        else:
+            print("No se encontró 'config.json' => Creando archivo con valores por defecto")
+
+        apply_config(DEFAULT_CONFIG)
+        # Captura fallos en el guardado de "config.json" con lo valores por defecto (cuando no existe/no válido)
+        try:
+            save_config(config_path, DEFAULT_CONFIG)
+        except Exception:
+            pass
+
+# Inicializar al importar
+load_config()

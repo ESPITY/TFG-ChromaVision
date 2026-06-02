@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 
-from config import WARP_OUTPUT_SIZE
+import config
 
 # Warp de la perspectiva: imagen solo de la base adaptando las esquinas
-def base_warp(frame, corners, output_longest_side=WARP_OUTPUT_SIZE):
+def base_warp(frame, corners, output_longest_side=config.WARP_OUTPUT_SIZE):
     (top_left, top_right, bottom_right, bottom_left) = corners
 
     width_top = np.linalg.norm(top_right - top_left)

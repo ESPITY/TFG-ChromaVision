@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
-from config  import MIN_BASE_AREA_RATIO
+import config
 
 # Detecta la base
 def detect_base(frame):
@@ -50,7 +50,7 @@ def detect_base(frame):
     max_area = 0
     # Calcular el área mínima que debe tener el rectángulo (según % que ocupa del frame)
     frame_h, frame_w = frame.shape[:2]
-    min_area = frame_w * frame_h * MIN_BASE_AREA_RATIO
+    min_area = frame_w * frame_h * config.MIN_BASE_AREA_RATIO
 
     # Combinaciones de líneas (2 de cada cluster): recorre todas las posibles
     for (cl1_line1, cl1_line2) in combinations(cluster1, 2):

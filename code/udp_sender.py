@@ -1,11 +1,11 @@
 import socket
 import json
 
-from config import UDP_IP, UDP_PORT
+import config
 
 # Clase para crear un socket UDP y poder reutilizarlo (en lugar de crear/cerrar uno por cada envío)
 class UDP_socket:
-    def __init__(self, ip=UDP_IP, port=UDP_PORT):
+    def __init__(self, ip=config.UDP_IP, port=config.UDP_PORT):
         self.ip = ip
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Socket UDP
