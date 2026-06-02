@@ -1,20 +1,20 @@
 import socket
 import json
 
-UDP_IP = "127.0.0.1"
-UDP_PORT = 5005
+from config import UDP_IP, UDP_PORT
 
 # Clase para crear un socket UDP y poder reutilizarlo (en lugar de crear/cerrar uno por cada envío)
 class UDP_socket:
-    def __init__(self, ip="127.0.0.1", port=5005):
+    def __init__(self, ip=UDP_IP, port=UDP_PORT):
         self.ip = ip
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Socket UDP
+        self.socket_error_printed = False   # Flag para saber si el error de socket ya se ha impreso 1 vez
     
     # Envía la lista de piezas por UDP en formato JSON
     def send_pieces(self, pieces):
-        # if not pieces:
-        #     return
+        # Se envía incluso si la lista está vacía para que el motor gestione
+        # la eliminación de todos los actores cuando no se detectan piezas
         
         # JSON
         data = {
@@ -28,7 +28,12 @@ class UDP_socket:
             ]
         }
         message = json.dumps(data)
-        self.sock.sendto(message.encode('utf-8'), (self.ip, self.port))
+        try:
+            self.sock.sendto(message.encode('utf-8'), (self.ip, self.port))
+        except OSError as e:
+            if not self.socket_error_printed:
+                print(f"Error en el envío por socket UDP: {e}")
+                self.socket_error_printed = True
     
     def close_socket(self):
         self.sock.close()
