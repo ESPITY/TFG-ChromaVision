@@ -6,7 +6,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import cv2
 import numpy as np
 
-from config import COLORS, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, IMG_SCALE
+from config import COLORS, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, BASE_WIDTH_CM, BASE_HEIGHT_CM   #, WINDOW_SCALE
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
@@ -16,7 +16,7 @@ def get_masks(frame):
         mask = cv2.inRange(frame_HSV, lower, upper)
         masks[name] = mask
 
-        #mask = cv2.resize(mask, None, fx=IMG_SCALE, fy=IMG_SCALE, interpolation=cv2.INTER_LINEAR)
+        #mask = cv2.resize(mask, None, fx=WINDOw_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
         #cv2.imshow("Mask " + name, mask)
     return masks
 

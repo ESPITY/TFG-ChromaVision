@@ -16,7 +16,7 @@ COLORS = [
 
 BASE_WIDTH_CM = 25.5        # Ancho real de la base en cm
 BASE_HEIGHT_CM = 25.5       # Alto real de la base en cm
-IMG_SCALE = 1               # Ver las ventanas/frames a menor tamaño (0.4)
+WINDOW_SCALE = 1               # Ver las ventanas/frames a menor tamaño (0.4)
 WARP_OUTPUT_SIZE = 800      # Tamaño del lado más largo de la imagen warp
 GRID_WIDTH = 16              # 16x16 celdas (base 32x32)
 GRID_HEIGHT = 16              # 16x16 celdas (base 32x32)
