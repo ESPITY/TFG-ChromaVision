@@ -13,8 +13,9 @@ COLORS = [
     ["Rosa", np.array([120, 30, 130]), np.array([180, 90, 255]), (190, 130, 250)]
 ]
 
-WINDOW_SCALE = 1               # Ver las ventanas/frames a menor tamaño (0.4)
-WARP_OUTPUT_SIZE = 800      # Tamaño del lado más largo de la imagen warp
-GRID_WIDTH = 16              # 16x16 celdas (base 32x32)
-GRID_HEIGHT = 16              # 16x16 celdas (base 32x32)
-PERCENT_FILLED_CELL = 0.6    # Porcentaje de relleno de color de la celda para considerarla ocupada
+WINDOW_SCALE = 1                # Ver las ventanas/frames a menor tamaño (0.4)
+WARP_OUTPUT_SIZE = 800          # Tamaño del lado más largo de la imagen warp
+GRID_WIDTH = 16                 # 16x16 celdas (base 32x32)
+GRID_HEIGHT = 16                # 16x16 celdas (base 32x32)
+PERCENT_FILLED_CELL = 0.6       # Porcentaje de relleno de color de la celda para considerarla ocupada
+MIN_BASE_AREA_RATIO = 0.05      # % mínimo del frame que debe ocupar la base (5%)

@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
+from config  import MIN_BASE_AREA_RATIO
+
 # Detecta la base
 def detect_base(frame):
     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
@@ -45,6 +47,9 @@ def detect_base(frame):
 
     best_rectangle = None
     max_area = 0
+    # Calcular el área mínima que debe tener el rectángulo (según % que ocupa del frame)
+    frame_h, frame_w = frame.shape[:2]
+    min_area = frame_w * frame_h * MIN_BASE_AREA_RATIO
 
     # Combinaciones de líneas (2 de cada cluster): recorre todas las posibles
     for (cl1_line1, cl1_line2) in combinations(cluster1, 2):
@@ -72,7 +77,7 @@ def detect_base(frame):
             area = rectangle_area(corners_sorted)   # Calcular área
             
             # Quedarse con el rectángulo de mayor área
-            if area > max_area:
+            if area > max_area and area >= min_area:
                 max_area = area
                 best_rectangle = {
                     'lines' : [cl1_line1, cl1_line2, cl2_line1, cl2_line2],
