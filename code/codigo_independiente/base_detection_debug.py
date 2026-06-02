@@ -4,7 +4,7 @@ import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
 # Detecta la base
-def detect_base(frame):
+def detect_base(frame, debug=False):
     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
     frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
@@ -23,13 +23,11 @@ def detect_base(frame):
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=150)
 
     if lines is None:
-        draw_base(frame, None)
         return None
     
     unique_lines = remove_line_duplicates(lines)    # Eliminar líneas duplicadas
 
     if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
-        draw_base(frame, None)
         return None
 
     clusters = cluster_lines_by_angle(unique_lines)        # Agrupar líneas en dos grupos según theta
@@ -40,7 +38,6 @@ def detect_base(frame):
     cluster1, cluster2 = clusters
     
     if len(cluster1) < 2 or len(cluster2) < 2:  # Alguno de los dos clusters no tiene 2 líneas
-        draw_base(frame, None)
         return None
 
     best_rectangle = None
@@ -80,17 +77,40 @@ def detect_base(frame):
                     'area' : area
                 }
 
-    draw_base(frame, best_rectangle)
+    draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug)
 
     return best_rectangle
 
-# Dibujar
-def draw_base(frame, best_rectangle):
+# Dibujar y debuggear
+def draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug=False):
     if best_rectangle is None:
+        if debug:
+            print("\nBASE NO DETECTADA")
         cv2.putText(frame, "Base NO detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         return
 
     cv2.putText(frame, "Base detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+    if debug:
+        print("\nBASE DETECTADA")
+
+        # 1. Dibujar todas las líneas que detecta HoughLines - Gris
+        print(f"Líneas detectadas: {len(lines)}")
+        for line in lines:  # (N, rho, theta)
+            draw_line(frame, line[0], (100, 100, 100), 1)
+
+        # 2. Dibujar las líneas únicas (sin las duplicadas) - Blanco
+        print(f"Líneas unicas: {len(unique_lines)}")
+        for unique_line in unique_lines:
+            draw_line(frame, unique_line, (255, 255, 255), 1)
+
+        # 3. Dibujar las líneas segmentadas en clusters (V = verde | H = rojo)
+        cluster1, cluster2 = clusters
+        print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
+        cluster_colors = assign_cluster_colors(clusters)
+        for cluster_color, cluster in zip(cluster_colors, clusters):
+            for line in cluster:
+                draw_line(frame, line, cluster_color, 2)
 
     # 4. Dibujar las 4 líneas del rectángulo - Morado
     for rectangle_line in best_rectangle['lines']:
@@ -105,6 +125,36 @@ def draw_base(frame, best_rectangle):
     for i, corner in enumerate(corners):
         corner_int = (int(np.round(corner[0])), int(np.round(corner[1])))
         cv2.circle(frame, corner_int, 8, (255, 200, 0), -1)
+        if debug:
+            cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+# Función auxiliar (debug): Asignar color a cada cluster según theta (V = verde | H = rojo)
+def assign_cluster_colors(clusters):
+    cluster_colors = []
+
+    for cluster in clusters:
+        # Comprobar cuantas lineas de cada grupo son verticales u horizontales
+        vertical_count = 0
+        horizontal_count = 0
+
+        for rho, theta in cluster:
+            if abs(np.sin(theta)) < 1e-6:  # Menor que 0 (evitar división por 0)
+                vertical_count += 1
+            else:
+                m = -np.cos(theta) / np.sin(theta)
+                if abs(m) > 1:
+                    vertical_count += 1
+                else:
+                    horizontal_count += 1
+
+        if vertical_count > horizontal_count:
+            cluster_colors.append((0, 255, 0))
+        elif horizontal_count > vertical_count:
+            cluster_colors.append((0, 0, 255))
+        else:
+            cluster_colors.append((0, 255, 255))
+            
+    return cluster_colors
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
 def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(10)):
