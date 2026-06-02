@@ -11,7 +11,7 @@ def detect_base(frame):
     frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
 
-    # Morphological Operation - Opening (erosion/dilation) - Eliminar ruido
+    # Morphological Operation - Cierre (erosion/dilation) - Eliminar ruido
     kernel = np.ones((5, 5), np.uint8)
     otsu_binary = cv2.morphologyEx(otsu_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
     
@@ -37,6 +37,7 @@ def detect_base(frame):
     clusters = cluster_lines_by_angle(unique_lines)        # Agrupar líneas en dos grupos según theta
 
     if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
+        draw_base(frame, None)
         return None
     
     cluster1, cluster2 = clusters
@@ -97,16 +98,16 @@ def draw_base(frame, best_rectangle):
 
     cv2.putText(frame, "Base detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-    # 4. Dibujar las 4 líneas del rectángulo - Morado
+    # Dibujar las 4 líneas del rectángulo - Morado
     for rectangle_line in best_rectangle['lines']:
         draw_line(frame, rectangle_line, (255, 0, 170), 2)
 
-    # 5. Dibujar el contorno del rectángulo - Naranja
+    # Dibujar el contorno del rectángulo - Naranja
     corners = best_rectangle['corners']
     corners_array = np.array(corners, dtype=np.int32)
     cv2.polylines(frame, [corners_array], True, (0, 200, 255), 3)
     
-    # 6. Dibujar las esquinas y numerar - Azul/Blanco
+    # Dibujar las esquinas - Azul/Blanco
     for i, corner in enumerate(corners):
         corner_int = (int(np.round(corner[0])), int(np.round(corner[1])))
         cv2.circle(frame, corner_int, 8, (255, 200, 0), -1)
@@ -237,7 +238,6 @@ def draw_line(frame, line, color=(0, 0, 255), thickness=1):
     # Longitud de la línea: hipotenusa según el teorema de Pitágoras
     length = np.hypot(frame.shape[0], frame.shape[1])
 
-    # 1000 es la longitud de la línea
     x1 = int(x0 + length * (-b))    # (r * cos(theta) - length * sin(theta))
     y1 = int(y0 + length * (a))     # (rs * in(theta) + length * cos(theta))
 

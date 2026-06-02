@@ -19,6 +19,7 @@ GRID_WIDTH = 16                 # 16x16 celdas (base 32x32)
 GRID_HEIGHT = 16                # 16x16 celdas (base 32x32)
 PERCENT_FILLED_CELL = 0.6       # Porcentaje de relleno de color de la celda para considerarla ocupada
 MIN_BASE_AREA_RATIO = 0.05      # % mínimo del frame que debe ocupar la base (5%)
+SHOW_PIECES_GRID = True         # Mostrar la cuadrícula de la ventana "Piezas"
 
 UDP_IP = "127.0.0.1"            # IP de la conexión por socket UDP
 UDP_PORT = 5005                 # Puerto de la conexión por socket UDP

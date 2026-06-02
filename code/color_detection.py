@@ -1,7 +1,7 @@
 # Detección de color
 import cv2
 
-from config import COLORS, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL
+from config import COLORS, GRID_WIDTH, GRID_HEIGHT, PERCENT_FILLED_CELL, SHOW_PIECES_GRID
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
@@ -54,7 +54,7 @@ def detect_pieces_grid(frame, masks):
     return pieces
 
 # Dibuja la cuadrícula (líneas moradas) y las piezas
-def draw_pieces_grid(frame, pieces, draw_grid=True):
+def draw_pieces_grid(frame, pieces, draw_grid=SHOW_PIECES_GRID):
     frame_h, frame_w = frame.shape[:2]
     cell_w = frame_w / GRID_WIDTH
     cell_h = frame_h / GRID_HEIGHT
