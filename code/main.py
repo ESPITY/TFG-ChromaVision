@@ -59,10 +59,23 @@ stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 udp = UDP_socket()    # Instanciar un socket UDP para enviar las piezas
 
+# Imagen por defecto de la ventana "Piezas" (cuando no se detecta base)
+default_pieces_img = np.zeros((WARP_OUTPUT_SIZE, WARP_OUTPUT_SIZE, 3), dtype=np.uint8)
+text = "Base NO detectada"
+font_face = cv2.FONT_HERSHEY_SIMPLEX
+font_scale = 1
+font_color = (0, 0, 255)
+thickness = 2
+
+text_width, text_height = cv2.getTextSize(text, font_face, font_scale, thickness)[0]
+center_text_coordinates = (int(WARP_OUTPUT_SIZE / 2) - int(text_width / 2), int(WARP_OUTPUT_SIZE / 2) + int(text_height / 2))
+cv2.putText(default_pieces_img, text, center_text_coordinates, font_face, font_scale, font_color, thickness)
+
+frame_pieces = default_pieces_img.copy()
+
 # Obtener todos los frames
 while (True):
     success, frame = stream.read()
-
     if not success:
         break
 
@@ -70,25 +83,27 @@ while (True):
     frame_base = frame.copy()
     base = detect_base(frame_base)
 
-    frame_base = cv2.resize(frame_base, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Base", frame_base)
+    frame_base_resized = cv2.resize(frame_base, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+    cv2.imshow("Base", frame_base_resized)
 
     # 2. Perspectiva/Warp
-    frame_warped = None
-
     if base is not None:
         corners = base['corners']
         frame_warped = base_warp(frame.copy(), corners)
-        height_warp, width_warp = frame_warped.shape[:2]
 
         masks = get_masks(frame_warped)
         pieces = detect_pieces_grid(frame_warped, masks)
 
-        frame_warped_show = cv2.resize(frame_warped, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
-        cv2.imshow("Piezas", frame_warped_show)
+        frame_pieces = frame_warped.copy()  # Si se ha detectado base mostrar el frame con warp y piezas
 
         #if pieces:
         udp.send_pieces(pieces)
+    else:
+        frame_pieces = default_pieces_img.copy()  # Si no se ha detectado la base mostrar una imagen por defector
+
+    frame_pieces_resized = cv2.resize(frame_pieces, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+    cv2.imshow("Piezas", frame_pieces_resized)
+
 
     # Cierre de todas las ventanas pulsando la tecla Escape (27) o pinchando en la X de alguna de las dos ventanas
     if cv2.waitKey(1) == 27 or cv2.getWindowProperty("Base", cv2.WND_PROP_VISIBLE) < 1 or cv2.getWindowProperty("Piezas", cv2.WND_PROP_VISIBLE) < 1:
