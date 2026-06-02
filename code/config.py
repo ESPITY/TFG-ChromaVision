@@ -3,6 +3,7 @@ import sys
 import os
 import numpy as np
 import json
+import time
     
 # Valores de configuración por defecto
 DEFAULT_CONFIG = {
@@ -27,6 +28,18 @@ DEFAULT_CONFIG = {
     "UDP_IP": "127.0.0.1",          # IP de la conexión por socket UDP
     "UDP_PORT": 5005                # Puerto de la conexión por socket UDP
 }
+
+# Mostrar mensaje de estatus sobre el guardado de la configuración durante X segundos
+STATUS_CONFIG_MSG_SUCCESS = "Configuracion guardada"
+STATUS_CONFIG_MSG_ERROR = "Error: usada configuracion por defecto"
+STATUS_CONFIG_MSG_TIME = 2.0
+status_config_msg = ""
+status_expire = 0.0
+
+def set_status_config_msg(message):
+    global status_config_msg, status_expire
+    status_config_msg = message
+    status_expire = time.time() + STATUS_CONFIG_MSG_TIME
 
 
 # Guardar la configuración en un JSON
@@ -74,7 +87,7 @@ def apply_config(config_dict):
     UDP_PORT = int(config_dict["UDP_PORT"])
 
 # Carga la configuración desde config.json, o lo crea con los valores por defecto si no existe o no es válido
-def load_config():
+def load_config(show_success_message=False):
     # Obtener la ruta de "config.json" sumándole la dirección del script/.exe ejecutado
     if getattr(sys, 'frozen', False):
         base_dir = os.path.dirname(sys.executable)
@@ -92,10 +105,17 @@ def load_config():
             raise ValueError("Estructura incorrecta")
         apply_config(config_dict)   # Lanzará un error si los valores no son correctos
 
+        if show_success_message:
+            set_status_config_msg(STATUS_CONFIG_MSG_SUCCESS)
+            print("Configuración recargada desde 'config.json'")
+
+        return True
+
     # Si algo falla
     except Exception as e:
         if os.path.exists(config_path):
-            print(f"Configuración inválida ({e}) => Usando valores por defecto")
+            set_status_config_msg(STATUS_CONFIG_MSG_ERROR)
+            print(f"Configuración no válida ({e}) => Usando valores por defecto")
         else:
             print("No se encontró 'config.json' => Creando archivo con valores por defecto")
 
@@ -105,6 +125,8 @@ def load_config():
             save_config(config_path, DEFAULT_CONFIG)
         except Exception:
             pass
+
+        return False
 
 # Inicializar al importar
 load_config()

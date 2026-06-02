@@ -4,6 +4,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 
 import cv2
 import numpy as np
+import time
 
 import config
 from color_detection import get_masks, detect_pieces_grid
@@ -13,7 +14,7 @@ from udp_sender import UDP_socket
 
 
 def main():
-    print("Inciando webcam...")
+    print("Iniciando webcam...")
 
     # Webcam
     stream =  cv2.VideoCapture(0)
@@ -40,6 +41,8 @@ def main():
         base = detect_base(frame_base)
 
         frame_base_resized = cv2.resize(frame_base, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        if config.status_config_msg and time.time() < config.status_expire:
+            cv2.putText(frame_base_resized, config.status_config_msg, (30, frame_base_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         cv2.imshow("Base", frame_base_resized)
 
         # 2. Perspectiva/Warp
@@ -68,13 +71,14 @@ def main():
             frame_pieces = default_pieces_img.copy()  # Si no se ha detectado la base mostrar una imagen por defecto
 
         frame_pieces_resized = cv2.resize(frame_pieces, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        if config.status_config_msg and time.time() < config.status_expire:
+            cv2.putText(frame_pieces_resized, config.status_config_msg, (30, frame_pieces_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         cv2.imshow("Piezas", frame_pieces_resized)
 
         key = cv2.waitKey(1) & 0xFF
          # Recargar los valores de configuración al pulsar la tecla r/R
         if key == ord('r') or key == ord('R'):
-            config.load_config()
-            print("Configuración recargada desde 'config.json'")
+            config.load_config(show_success_message=True)
         # Cierre de todas las ventanas pulsando la tecla Escape (27) o pinchando en la X de alguna de las dos ventanas
         if key == 27:
             break
