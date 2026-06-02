@@ -1,7 +1,4 @@
 # Detección de base (HoughLines)
-import os
-os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
-
 import cv2
 import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares

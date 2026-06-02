@@ -5,7 +5,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 
-from config import WINDOW_SCALE, WARP_OUTPUT_SIZE, BASE_WIDTH_CM, BASE_HEIGHT_CM
+from config import WINDOW_SCALE, WARP_OUTPUT_SIZE
 from color_detection import get_masks, detect_pieces_grid
 from base_detection import detect_base
 from udp_sender import UDP_socket
@@ -75,20 +75,14 @@ while (True):
 
     # 2. Perspectiva/Warp
     frame_warped = None
-    cm_px_width = None
-    cm_px_height = None
+
     if base is not None:
         corners = base['corners']
         frame_warped = base_warp(frame.copy(), corners)
         height_warp, width_warp = frame_warped.shape[:2]
 
-        # Conversión píxeles a cm
-        cm_px_width = float(BASE_WIDTH_CM / width_warp)
-        cm_px_height = float(BASE_HEIGHT_CM / height_warp)
-        cm_px = (cm_px_width, cm_px_height)
-
         masks = get_masks(frame_warped)
-        pieces = detect_pieces_grid(frame_warped, masks, cm_px, debug=True)
+        pieces = detect_pieces_grid(frame_warped, masks)
 
         frame_warped_show = cv2.resize(frame_warped, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
         cv2.imshow("Piezas", frame_warped_show)
