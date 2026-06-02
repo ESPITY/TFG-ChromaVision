@@ -22,10 +22,6 @@ def detect_base(frame, debug=False):
     kernel = np.ones((3, 3), np.uint8) 
     edges = cv2.dilate(edges, kernel, iterations=1)
 
-    # cv2.imshow("Blur", frame_blur)
-    # cv2.imshow("OTSU Binary", otsu_binary)
-    # cv2.imshow("Edges", edges)
-
     # HOUGH LINES (Resolución - rho: 1px, theta: 1º) (Threshold: mín nº de intersecciones para considerar una línea)
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=150)
 
@@ -84,16 +80,23 @@ def detect_base(frame, debug=False):
                     'area' : area
                 }
 
-    # DIBUJAR Y DEBUGGEAR
-    if best_rectangle is None:
-        print("\nBASE NO DETECTADA")
-        cv2.putText(frame, "Base NO detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        return None
+    draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug)
 
-    print("\nBASE DETECTADA")
+    return best_rectangle
+
+# Dibujar y debuggear
+def draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug=False):
+    if best_rectangle is None:
+        if debug:
+            print("\nBASE NO DETECTADA")
+        cv2.putText(frame, "Base NO detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        return
+
     cv2.putText(frame, "Base detectada", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     if debug:
+        print("\nBASE DETECTADA")
+
         # 1. Dibujar todas las líneas que detecta HoughLines - Gris
         print(f"Líneas detectadas: {len(lines)}")
         for line in lines:  # (N, rho, theta)
@@ -105,6 +108,7 @@ def detect_base(frame, debug=False):
             draw_line(frame, unique_line, (255, 255, 255), 1)
 
         # 3. Dibujar las líneas segmentadas en clusters (V = verde | H = rojo)
+        cluster1, cluster2 = clusters
         print(f"Cluster 1: {len(cluster1)} líneas, Cluster 2: {len(cluster2)} líneas")
         cluster_colors = assign_cluster_colors(clusters)
         for cluster_color, cluster in zip(cluster_colors, clusters):
@@ -124,9 +128,36 @@ def detect_base(frame, debug=False):
     for i, corner in enumerate(corners):
         corner_int = (int(np.round(corner[0])), int(np.round(corner[1])))
         cv2.circle(frame, corner_int, 8, (255, 200, 0), -1)
-        #cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-    
-    return best_rectangle
+        if debug:
+            cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+# Función auxiliar (debug): Asignar color a cada cluster según theta (V = verde | H = rojo)
+def assign_cluster_colors(clusters):
+    cluster_colors = []
+
+    for cluster in clusters:
+        # Comprobar cuantas lineas de cada grupo son verticales u horizontales
+        vertical_count = 0
+        horizontal_count = 0
+
+        for rho, theta in cluster:
+            if abs(np.sin(theta)) < 1e-6:  # Menor que 0 (evitar división por 0)
+                vertical_count += 1
+            else:
+                m = -np.cos(theta) / np.sin(theta)
+                if abs(m) > 1:
+                    vertical_count += 1
+                else:
+                    horizontal_count += 1
+
+        if vertical_count > horizontal_count:
+            cluster_colors.append((0, 255, 0))
+        elif horizontal_count > vertical_count:
+            cluster_colors.append((0, 0, 255))
+        else:
+            cluster_colors.append((0, 255, 255))
+            
+    return cluster_colors
 
 # Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
 def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(10)):
@@ -262,33 +293,3 @@ def draw_line(frame, line, color=(0, 0, 255), thickness=1):
     y2 = int(y0 - length * (a))     # (r * sin(theta) - length * cos(theta))
 
     cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
-
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Asignar color a cada cluster según theta (V = verde | H = rojo)
-def assign_cluster_colors(clusters):
-    cluster_colors = []
-
-    for cluster in clusters:
-        # Comprobar cuantas lineas de cada grupo son verticales u horizontales
-        vertical_count = 0
-        horizontal_count = 0
-
-        for rho, theta in cluster:
-            if abs(np.sin(theta)) < 1e-6:  # Menor que 0 (evitar división por 0)
-                vertical_count += 1
-            else:
-                m = -np.cos(theta) / np.sin(theta)
-                if abs(m) > 1:
-                    vertical_count += 1
-                else:
-                    horizontal_count += 1
-
-        if vertical_count > horizontal_count:
-            cluster_colors.append((0, 255, 0))
-        elif horizontal_count > vertical_count:
-            cluster_colors.append((0, 0, 255))
-        else:
-            cluster_colors.append((0, 255, 255))
-            
-    return cluster_colors
