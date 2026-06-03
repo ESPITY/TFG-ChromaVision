@@ -5,9 +5,15 @@ from itertools import combinations  # Combinaciones de posibles líneas perpendi
 
 import config
 
+DETECT_FRAME_SCALE = 0.5    # Factor de reducción del tamaño del frame original (optimizar detección)
+
+
 # Detecta la base
 def detect_base(frame):
-    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)        # Convertir el frame de BGR a escala de grises
+    # Reducir el tamaño del frame original para acelerar los cálculos
+    frame_low = cv2.resize(frame.copy(), None, fx=DETECT_FRAME_SCALE, fy=DETECT_FRAME_SCALE, interpolation=cv2.INTER_LINEAR)
+
+    frame_grey = cv2.cvtColor(frame_low, cv2.COLOR_BGR2GRAY)        # Convertir el frame de BGR a escala de grises
     frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30)   # Reducir el ruido manteniendo bordes nítidos
     _, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
 
@@ -46,7 +52,7 @@ def detect_base(frame):
     best_rectangle = None
     max_area = 0
     # Calcular el área mínima que debe tener el rectángulo (según % que ocupa del frame)
-    frame_h, frame_w = frame.shape[:2]
+    frame_h, frame_w = frame_low.shape[:2]
     min_area = frame_w * frame_h * config.MIN_BASE_AREA_RATIO
 
     # Combinaciones de líneas (2 de cada cluster): recorre todas las posibles
@@ -68,7 +74,7 @@ def detect_base(frame):
             ]
             
             # Comprobar que todas las esquinas existen y que están dentro del frame
-            if None in corners or not all(is_point_inside_frame(c, frame) for c in corners):
+            if None in corners or not all(is_point_inside_frame(c, frame_low) for c in corners):
                 continue
 
             corners_sorted = sort_corners_clockwise(corners)    # Ordenar esquinas
@@ -83,6 +89,11 @@ def detect_base(frame):
                     'area' : area
                 }
 
+    # Ajustar las coordenadas de las líneas y las esquinas a la imagen original (factor de escalado)
+    scale_factor = 1.0 / DETECT_FRAME_SCALE
+    if best_rectangle is not None:
+        best_rectangle['corners'] = [c * scale_factor for c in best_rectangle['corners']]
+        best_rectangle['lines'] = [(rho * scale_factor, theta) for rho, theta in best_rectangle['lines']]
     draw_base(frame, best_rectangle)
 
     return best_rectangle
