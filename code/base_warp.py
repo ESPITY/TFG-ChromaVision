@@ -1,3 +1,4 @@
+# Warp de perspectiva de la imagen del área de la base
 import cv2
 import numpy as np
 
@@ -16,7 +17,7 @@ def base_warp(frame, corners, output_longest_side=config.WARP_OUTPUT_SIZE):
     avg_width = int((width_top + width_bottom) / 2)
     avg_height = int((height_right + height_left) / 2)
 
-    if avg_width < 1 or avg_height < 1: # Evitar división por cero
+    if avg_width < 1 or avg_height < 1:   # Evitar división por cero
         return frame
 
     scale = output_longest_side / max(avg_width, avg_height)
@@ -25,7 +26,7 @@ def base_warp(frame, corners, output_longest_side=config.WARP_OUTPUT_SIZE):
     # Esquinas de la imagen final (sentido horario: TL, TR, BR, BL)
     output_corners = np.float32([[0, 0], [output_width - 1, 0], [output_width - 1, output_height - 1], [0, output_height - 1]])
 
-    # Transformacion de perspectiva
+    # Transformación de perspectiva
     matrix = cv2.getPerspectiveTransform(np.array(corners), output_corners)
     frame_warped = cv2.warpPerspective(frame, matrix, (output_width, output_height))
 

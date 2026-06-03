@@ -1,3 +1,4 @@
+# UDP Sender: envía información de las piezas (color y posición) al motor de videojuegos por UDP
 import socket
 import json
 
@@ -9,13 +10,13 @@ class UDP_socket:
         self.ip = ip
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Socket UDP
-        self.socket_error_printed = False   # Flag para saber si el error de socket ya se ha impreso 1 vez
+        self.socket_error_printed = False    # Flag indica si el error de socket ya se ha impreso 1 vez
     
     # Envía la lista de piezas por UDP en formato JSON
     def send_pieces(self, pieces):
         # Se envía incluso si la lista está vacía para que el motor gestione
         # la eliminación de todos los actores cuando no se detectan piezas
-        
+
         # JSON
         data = {
             "pieces": [
@@ -28,6 +29,7 @@ class UDP_socket:
             ]
         }
         message = json.dumps(data)
+
         try:
             self.sock.sendto(message.encode('utf-8'), (self.ip, self.port))
         except OSError as e:

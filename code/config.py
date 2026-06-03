@@ -1,4 +1,4 @@
-# Config
+# Config: crea un archivo JSON cuando se ejecuta que permite modificar los valores por defecto
 import sys
 import os
 import numpy as np
@@ -7,8 +7,8 @@ import time
     
 # Valores de configuración por defecto
 DEFAULT_CONFIG = {
-    # HSV -> Hue-X (0-180) Saturation-Y (0-255) Value (0-255) -> Value (20-255) normalmente
-    # Color: Nombre, lower HSV, upper HSV, color BGR
+    # HSV -> Hue-X (0-180) Saturation-Y (0-255) Value-Z (0-255)
+    # Color: nombre, lowerHSV, upperHSV, colorBGR
     "COLORS": [
         ["Rojo", [0, 200, 20], [10, 255, 255], [0, 0, 255]],
         ["Amarillo", [15, 180, 20], [25, 255, 255], [0, 255, 255]],
@@ -18,18 +18,18 @@ DEFAULT_CONFIG = {
         ["Naranja", [8, 150, 120], [20, 255, 255], [0, 125, 255]],
         ["Rosa", [120, 30, 130], [180, 90, 255], [190, 130, 250]]
     ],
-    "WINDOW_SCALE": 1.0,            # Ver las ventanas/frames a menor tamaño (0.4)
-    "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen warp
-    "GRID_WIDTH": 16,               # 16x16 celdas (base 32x32)
+    "WINDOW_SCALE": 1.0,            # Escalar el tamaño de las ventanas
+    "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen base_warped
+    "GRID_WIDTH": 16,               # 16x16 celdas (base 32x32 studs)
     "GRID_HEIGHT": 16,
-    "PERCENT_FILLED_CELL": 0.6,     # Porcentaje de relleno de color de la celda para considerarla ocupada
-    "MIN_BASE_AREA_RATIO": 0.05,    # % mínimo del frame que debe ocupar la base (5%)
+    "PERCENT_FILLED_CELL": 0.6,     # % de relleno de color de la celda para considerarla ocupada
+    "MIN_BASE_AREA_RATIO": 0.05,    # % mínimo del frame que debe ocupar la base
     "SHOW_PIECES_GRID": True,       # Mostrar la cuadrícula de la ventana "Piezas"
     "UDP_IP": "127.0.0.1",          # IP de la conexión por socket UDP
     "UDP_PORT": 5005                # Puerto de la conexión por socket UDP
 }
 
-# Mostrar mensaje de estatus sobre el guardado de la configuración durante X segundos
+# Mostrar mensaje de estatus del guardado de la configuración (durante X segundos)
 STATUS_CONFIG_MSG_SUCCESS = "Configuracion guardada"
 STATUS_CONFIG_MSG_ERROR = "Error: usada configuracion por defecto"
 STATUS_CONFIG_MSG_TIME = 2.0
@@ -40,7 +40,6 @@ def set_status_config_msg(message):
     global status_config_msg, status_expire
     status_config_msg = message
     status_expire = time.time() + STATUS_CONFIG_MSG_TIME
-
 
 # Guardar la configuración en un JSON
 def save_config(config_path, data):
@@ -62,7 +61,7 @@ def save_config(config_path, data):
     with open(config_path, "w", encoding="utf-8") as file:
         file.write(final_json)
 
-# Asigna las variables del diccionario de config.json
+# Asigna las variables del diccionario de "config.json"
 def apply_config(config_dict):
     global COLORS, WINDOW_SCALE, WARP_OUTPUT_SIZE, GRID_WIDTH, GRID_HEIGHT
     global PERCENT_FILLED_CELL, MIN_BASE_AREA_RATIO, SHOW_PIECES_GRID
@@ -86,32 +85,32 @@ def apply_config(config_dict):
     UDP_IP = str(config_dict["UDP_IP"])
     UDP_PORT = int(config_dict["UDP_PORT"])
 
-# Carga la configuración desde config.json, o lo crea con los valores por defecto si no existe o no es válido
+# Carga la configuración desde "config.json", o lo crea con los valores por defecto si no existe/no válido
 def load_config(show_success_message=False):
-    # Obtener la ruta de "config.json" sumándole la dirección del script/.exe ejecutado
+    # Obtener la ruta de "config.json" sumándole la dirección del script/ejecutable
     if getattr(sys, 'frozen', False):
         base_dir = os.path.dirname(sys.executable)
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, "config.json")
 
-    # Intentar leer el archivo existente
+    # Intentar leer el archivo "config.json"
     try:
         with open(config_path, "r", encoding="utf-8") as file:
             config_dict = json.load(file)
 
         # Comprobar si los datos leídos tienen estructura de diccionario
         if not isinstance(config_dict, dict):
-            raise ValueError("Estructura incorrecta")
+            raise ValueError("Estructura de JSON incorrecta")
         apply_config(config_dict)   # Lanzará un error si los valores no son correctos
 
         if show_success_message:
             set_status_config_msg(STATUS_CONFIG_MSG_SUCCESS)
-            print("Configuración recargada desde 'config.json'")
+            print("Configuración actualizada desde 'config.json'")
 
         return True
 
-    # Si algo falla
+    # Si algo falla al leer "config.json"
     except Exception as e:
         if os.path.exists(config_path):
             set_status_config_msg(STATUS_CONFIG_MSG_ERROR)
@@ -120,7 +119,7 @@ def load_config(show_success_message=False):
             print("No se encontró 'config.json' => Creando archivo con valores por defecto")
 
         apply_config(DEFAULT_CONFIG)
-        # Captura fallos en el guardado de "config.json" con lo valores por defecto (cuando no existe/no válido)
+        # Fallos en el guardado de "config.json" (no existe/no válido) => valores por defecto 
         try:
             save_config(config_path, DEFAULT_CONFIG)
         except Exception:

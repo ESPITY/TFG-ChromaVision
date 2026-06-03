@@ -1,11 +1,11 @@
-# Detección de color
+# Detección de piezas (colores y posición)
 import cv2
 
 import config
 
 # Obtiene las máscaras de cada color {color: máscara}
 def get_masks(frame):
-    frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # Convertir el frame de BGR a HSV
+    frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)   # Convertir el frame de BGR a HSV
     masks = {}
     for name, lower, upper, _ in config.COLORS:
         mask = cv2.inRange(frame_HSV, lower, upper)
@@ -19,8 +19,7 @@ def detect_pieces_grid(frame, masks):
     cell_h = frame_h / config.GRID_HEIGHT
     
     pieces = []
-
-    # Recorrer cada celda por índices (no coordenadas de píxeles)
+    # Recorrer cada celda por índices de celda
     for row in range(config.GRID_HEIGHT):
         for col in range(config.GRID_WIDTH):
             x1 = int(col * cell_w)
@@ -33,9 +32,10 @@ def detect_pieces_grid(frame, masks):
             
             best_color = None
             max_pixels = 0
-            # Evaluar cada color
+
+            # Evaluar cada color (comprobar el área ocupada por cada color y escoger el máx)
             for name, mask in masks.items():
-                roi = mask[y1:y2, x1:x2]    # Región de Interés: celda de la imagen recortada
+                roi = mask[y1:y2, x1:x2]        # Región de Interés: celda de la imagen recortada
                 pixels = cv2.countNonZero(roi)  # Imagen binaria => contar píxeles blancos
                 if pixels > max_pixels and pixels > min_pixels:
                     max_pixels = pixels
@@ -53,12 +53,13 @@ def detect_pieces_grid(frame, masks):
 
     return pieces
 
-# Dibuja la cuadrícula (líneas moradas) y las piezas
+# Dibuja la cuadrícula (líneas moradas) y las piezas (círculo relleno del color detectado)
 def draw_pieces_grid(frame, pieces, draw_grid=config.SHOW_PIECES_GRID):
     frame_h, frame_w = frame.shape[:2]
     cell_w = frame_w / config.GRID_WIDTH
     cell_h = frame_h / config.GRID_HEIGHT
 
+    # Dibujar cuadrícula
     if draw_grid:
         for i in range(1, config.GRID_WIDTH):
             x = int(i * cell_w)

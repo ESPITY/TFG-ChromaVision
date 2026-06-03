@@ -1,4 +1,4 @@
-# Main
+# Main: lee la webcam, detecta la base, hace un warp de la base, detecta las piezas y las envía al motor de videojuegos por UDP
 import os
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicialización más rápida de la webcam
 
@@ -22,7 +22,7 @@ def main():
         print("Error accediendo a la webcam")
         exit()
 
-    # Configurar: fps, altura y ancho de frames de la webcam y nº de frames almacenados en el buffer
+    # Configurar: fps, altura/ancho de frames de la webcam y nº de frames almacenados en el buffer
     stream.set(cv2.CAP_PROP_FPS , 30.0)
     stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
@@ -36,16 +36,17 @@ def main():
         if not success:
             break
 
-        # 1. Detección de la base (HoughLines)
+        # Detección de la base (HoughLines)
         frame_base = frame.copy()
         base = detect_base(frame_base)
 
         frame_base_resized = cv2.resize(frame_base, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        # Mensaje de estatus sobre el guardado de la configuración
         if config.status_config_msg and time.time() < config.status_expire:
             cv2.putText(frame_base_resized, config.status_config_msg, (30, frame_base_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         cv2.imshow("Base", frame_base_resized)
 
-        # 2. Perspectiva/Warp
+        # Perspectiva/Warp de la base y detección de piezas (colores y posición)
         if base is not None:
             corners = base['corners']
             frame_warped = base_warp(frame.copy(), corners, output_longest_side=config.WARP_OUTPUT_SIZE)
@@ -53,7 +54,7 @@ def main():
             masks = get_masks(frame_warped)
             pieces = detect_pieces_grid(frame_warped, masks)
 
-            frame_pieces = frame_warped.copy()  # Si se ha detectado base mostrar el frame con warp y piezas
+            frame_pieces = frame_warped.copy()  # Si se ha detectado la base mostrar el frame con warp y piezas
             
             udp.send_pieces(pieces)
         else:
@@ -68,9 +69,10 @@ def main():
             center_text_coordinates = (int(config.WARP_OUTPUT_SIZE / 2) - int(text_width / 2), int(config.WARP_OUTPUT_SIZE / 2) + int(text_height / 2))
             cv2.putText(default_pieces_img, text, center_text_coordinates, font_face, font_scale, font_color, thickness)
 
-            frame_pieces = default_pieces_img.copy()  # Si no se ha detectado la base mostrar una imagen por defecto
+            frame_pieces = default_pieces_img.copy()  # Si no se ha detectado la base mostrar la imagen por defecto
 
         frame_pieces_resized = cv2.resize(frame_pieces, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        # Mensaje de estatus sobre el guardado de la configuración
         if config.status_config_msg and time.time() < config.status_expire:
             cv2.putText(frame_pieces_resized, config.status_config_msg, (30, frame_pieces_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         cv2.imshow("Piezas", frame_pieces_resized)
