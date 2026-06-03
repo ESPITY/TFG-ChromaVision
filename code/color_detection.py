@@ -1,5 +1,6 @@
 # Detección de piezas (colores y posición)
 import cv2
+import numpy as np
 
 import config
 
@@ -8,8 +9,22 @@ def get_masks(frame):
     frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)   # Convertir el frame de BGR a HSV
     masks = {}
     for name, lower, upper, _ in config.COLORS:
-        mask = cv2.inRange(frame_HSV, lower, upper)
+        # En HSV el Hue es circular. Si el rango de color cruza el límite (H_lower > H_upper)
+        # se divide en dos rangos/máscaras válidas (extremos de Hue) y se combinan (suman)
+        if lower[0] > upper[0]:
+            lower1 = np.array([lower[0], lower[1], lower[2]])
+            upper1 = np.array([179, upper[1], upper[2]])
+            mask1 = cv2.inRange(frame_HSV, lower1, upper1)
+
+            lower2 = np.array([0, lower[1], lower[2]])
+            upper2 = np.array([upper[0], upper[1], upper[2]])
+            mask2 = cv2.inRange(frame_HSV, lower2, upper2)
+
+            mask = cv2.bitwise_or(mask1, mask2)
+        else:
+            mask = cv2.inRange(frame_HSV, lower, upper)
         masks[name] = mask
+
     return masks
 
 # Detecta las piezas en cada celda de la cuadrícula

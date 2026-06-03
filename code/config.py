@@ -11,12 +11,12 @@ DEFAULT_CONFIG = {
     # Color: nombre, lowerHSV, upperHSV, colorBGR
     "COLORS": [
         ["Rojo", [0, 200, 20], [10, 255, 255], [0, 0, 255]],
-        ["Amarillo", [15, 180, 20], [25, 255, 255], [0, 255, 255]],
-        ["Azul", [100, 200, 20], [120, 255, 255], [255, 190, 0]],
-        ["Verde", [40, 150, 20], [100, 255, 255], [0, 255, 0]],
+        ["Amarillo", [22, 150, 50], [35, 255, 255], [0, 255, 255]],
+        ["Azul", [100, 150, 20], [120, 255, 255], [255, 190, 0]],
+        ["Verde", [40, 130, 20], [100, 255, 255], [0, 255, 0]],
         ["Negro", [0, 0, 0], [179, 255, 40], [120, 120, 120]],
         ["Naranja", [8, 150, 120], [20, 255, 255], [0, 125, 255]],
-        ["Rosa", [120, 30, 130], [180, 90, 255], [190, 130, 250]]
+        ["Rosa", [160, 30, 130], [15, 150, 255], [190, 130, 250]]
     ],
     "WINDOW_SCALE": 1.0,            # Escalar el tamaño de las ventanas
     "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen base_warped
@@ -70,10 +70,10 @@ def apply_config(config_dict):
     COLORS = []
     for color in config_dict["COLORS"]:
         name = color[0]
-        lowerHSV = np.array(color[1])
-        upperHSV = np.array(color[2])
-        colorBGR = tuple(color[3])
-        COLORS.append([name, lowerHSV, upperHSV, colorBGR])
+        lower_HSV = np.array(color[1])
+        upper_HSV = np.array(color[2])
+        color_BGR = tuple(color[3])
+        COLORS.append([name, lower_HSV, upper_HSV, color_BGR])
 
     WINDOW_SCALE = float(config_dict["WINDOW_SCALE"])
     WARP_OUTPUT_SIZE = int(config_dict["WARP_OUTPUT_SIZE"])
