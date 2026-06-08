@@ -66,8 +66,8 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
             ExistingActor->Destroy();
 
         // Spawnear nuevo actor
-        if (!GetWorld()) {
-            UE_LOG(LogTemp, Error, TEXT("No se pudo obtener el mundo para spawnear el actor"));
+        if (!GetWorld() || GetWorld()->bIsTearingDown) {
+            UE_LOG(LogTemp, Error, TEXT("No se pudo obtener el mundo (o esta siendo destruido) para spawnear el actor"));
             continue;
         }
         AActor* NewActor = GetWorld()->SpawnActor<AActor>(*ActorClass, CellToWorld(Cell.X, Cell.Y), FRotator::ZeroRotator);

@@ -82,6 +82,12 @@ void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4End
 /* Procesa el mensaje JSON en el hilo principal: parsea, extrae array "pieces", convierte cada objeto a
  * FPieceData, notifica a Blueprint mediante OnPiecesReceived y actualiza el PieceSpawnerComponent si existe */
 void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
+    // Verificar que el objeto sigue vivo y que el mundo no está siendo desmontado
+    if (!IsValid(this) || !GetWorld() || GetWorld()->bIsTearingDown) {
+        UE_LOG(LogTemp, Warning, TEXT("ProcessMessage abortado: objeto inválido o mundo en destruído"));
+        return;
+    }
+
     // Almacenará el objeto JSON parseado
     TSharedPtr<FJsonObject> JsonParsed;
     // Lee el mensaje
@@ -126,12 +132,12 @@ void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
     OnPiecesReceived(PiecesStruct);
 
     // Si existe el componente PieceSpawnerComponent actualizarlo
-    if (IsValid(PieceSpawner)) {
+    if (PieceSpawner && IsValid(PieceSpawner)) {
         PieceSpawner->UpdatePieces(PiecesStruct);
     }
 }
 
-/* Detiene el receptor UDP y cierra y destruye el socket UDP */
+// Detiene el receptor UDP y cierra y destruye el socket UDP
 void AUDPReceiver::StopUDPReceiver() {
     if (UDPReceiver) {
         UDPReceiver->Stop();
@@ -147,8 +153,9 @@ void AUDPReceiver::StopUDPReceiver() {
     }
 }
 
-/* Se llama cuando el actor se destruye o se cambia de nivel, asegura el cierre */
+// Se llama cuando el actor se destruye o se cambia de nivel, asegura el cierre
 void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason) {
+    StopUDPReceiver();  // Detener el receptor UDP inmediatamente para evitar la llegada de mensajes
+    PieceSpawner = nullptr;
     Super::EndPlay(EndPlayReason);
-    StopUDPReceiver();
 }
