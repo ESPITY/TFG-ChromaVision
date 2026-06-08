@@ -76,6 +76,11 @@ void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4End
     const uint8* RawData = Message->GetData();
     FString ReceivedData = FString(NumBytes, UTF8_TO_TCHAR(reinterpret_cast<const char*>(RawData)));
 
+    // Limpiar todos los caracteres que haya después de la última llave "}" (aparece basura durante la comunicación UDP)
+    int32 LastBracket = -1;
+    if (!ReceivedData.FindLastChar('}', LastBracket)) return;
+    ReceivedData = ReceivedData.Left(LastBracket + 1);
+
     AsyncTask(ENamedThreads::GameThread, [this, ReceivedData]() { ProcessMessage(ReceivedData); });
 }
 
