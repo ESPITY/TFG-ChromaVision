@@ -1,3 +1,4 @@
+// UDPReceiver.cpp
 #include "UDPReceiver.h"
 #include "Async/Async.h"
 #include "Json.h"
@@ -12,6 +13,13 @@ AUDPReceiver::AUDPReceiver() {
 void AUDPReceiver::BeginPlay() {
     Super::BeginPlay();
 
+    // Obtiene el componente que spawnea piezas
+    PieceSpawner = FindComponentByClass<UPieceSpawnerComponent>();
+    if (!PieceSpawner) {
+        UE_LOG(LogTemp, Warning, TEXT("No se encontró PieceSpawnerComponent"));
+    }
+
+    // Si está activo inicia el receptor UDP en el Begin Play
     if (bAutoStart) {
         bool bSuccess = StartUDPReceiver();
         if (!bSuccess) {
@@ -20,18 +28,26 @@ void AUDPReceiver::BeginPlay() {
     }
 }
 
-// BufferSize = 2 MB
+/* Inicia el receptor UDP: crea un socket UDP (IP, puerto),
+ * configura el receptor asíncrono en un hilo secundario
+ * y anlaza el callback OnPiecesReceived */
 bool AUDPReceiver::StartUDPReceiver() {
+    // Comprobar si el receptor UDP ya está activo
     if (UDPReceiver) {
-        UE_LOG(LogTemp, Warning, TEXT("UDPReceiver ya está corriendo"));
+        UE_LOG(LogTemp, Warning, TEXT("Receptor UDP ya está activo"));
         return true;
     }
 
+    // Validar la dirección IP
     FIPv4Address Addr;
-    FIPv4Address::Parse(IP, Addr);
+    if (!FIPv4Address::Parse(IP, Addr)) {
+        UE_LOG(LogTemp, Error, TEXT("IP inválida: %s"), *IP);
+        return false;
+    }
+
     FIPv4Endpoint Endpoint(Addr, Port);
 
-    // Crear el socket
+    // Crear el socket UDP
     Socket = FUdpSocketBuilder(*SocketName)
         .AsNonBlocking()
         .AsReusable()
@@ -39,11 +55,11 @@ bool AUDPReceiver::StartUDPReceiver() {
         .WithReceiveBufferSize(BufferSize);
 
     if (!Socket) {
-        UE_LOG(LogTemp, Error, TEXT("Error: No se pudo crear el socket"));
+        UE_LOG(LogTemp, Error, TEXT("No se pudo crear el socket"));
         return false;
     }
 
-    // Crear el receptor asíncrono
+    // Crear el receptor UDP asíncrono (hiilo secundario)
     FTimespan ThreadWaitTime = FTimespan::FromMilliseconds(100);
     UDPReceiver = new FUdpSocketReceiver(Socket, ThreadWaitTime, TEXT("UDP RECEIVER"));
     UDPReceiver->OnDataReceived().BindUObject(this, &AUDPReceiver::OnDataReceived);
@@ -53,88 +69,75 @@ bool AUDPReceiver::StartUDPReceiver() {
     return true;
 }
 
+/* Callback ejecutado en el hilo secundario cuando llega datos: convierte bytes a FString y
+ * llama a ProcessMessage en el hilo principal */
 void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt) {
-    // Convertir los datos recibidos a FString (UTF8)
-    //FString ReceivedData = FString(UTF8_TO_TCHAR(Message->GetData()));
-
     int32 NumBytes = Message->Num();
     const uint8* RawData = Message->GetData();
     FString ReceivedData = FString(NumBytes, UTF8_TO_TCHAR(reinterpret_cast<const char*>(RawData)));
 
-    AsyncTask(ENamedThreads::GameThread, [this, ReceivedData]() {
-            ProcessMessage(ReceivedData);
-        });
+    AsyncTask(ENamedThreads::GameThread, [this, ReceivedData]() { ProcessMessage(ReceivedData); });
 }
 
-// Parsear el JSON
+/* Procesa el mensaje JSON en el hilo principal: parsea, extrae array "pieces", convierte cada objeto a
+ * FPieceData, notifica a Blueprint mediante OnPiecesReceived y actualiza el PieceSpawnerComponent si existe */
 void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
-    // Mostrar el mensaje en pantalla
-    if (GEngine) {
-        //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, JsonRaw);
-    }
-    //UE_LOG(LogTemp, Log, TEXT("Mensaje recibido: %s"), *JsonRaw);
-
-
-    // Almacenará el objeto JSON en un puntero compartido
+    // Almacenará el objeto JSON parseado
     TSharedPtr<FJsonObject> JsonParsed;
     // Lee el mensaje
     TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonRaw);
 
     // Desserializar (convertir texto a JSON)
     if (!FJsonSerializer::Deserialize(JsonReader, JsonParsed) || !JsonParsed.IsValid()) {
-        //FString ExampleString = JsonParsed->GetStringField("exampleString");
-
         UE_LOG(LogTemp, Warning, TEXT("JSON inválido: %s"), *JsonRaw);
         return;
     }
 
-    // Extraer el PiecesArray
+    // Extraer el array "pieces"
     const TArray<TSharedPtr<FJsonValue>> *PiecesArray;
     if (!JsonParsed->TryGetArrayField(TEXT("pieces"), PiecesArray)) {
-        UE_LOG(LogTemp, Warning, TEXT("No se encontró el campo 'pieces'"));
+        UE_LOG(LogTemp, Warning, TEXT("No se encontró el campo 'pieces' en el JSON"));
         return;
     }
 
-    // Recorrer cada elemento del PiecesArray
+    // Convertir el array JSON a un array de estructuras de piezas
     TArray<FPieceData> PiecesStruct;
     for (const TSharedPtr<FJsonValue>& PieceValue : *PiecesArray) {
-        // Cada elemento es un objeto JSON (color, x, y)
+        // Cada elemento del array debe ser un objeto JSON (color, x, y)
         const TSharedPtr<FJsonObject>* PieceObj;
         if (!PieceValue->TryGetObject(PieceObj))
             continue;
 
-        // Guardar el objeto JSON como un elemento del struct - Si el campo no existe, dejan el valor sin cambiar (0 o vacío)
+        // Extraer datos del objeto JSON (si el campo no existe, deja el valor sin cambios)
         FPieceData Piece;
         (*PieceObj)->TryGetStringField(TEXT("color"), Piece.Color);
         (*PieceObj)->TryGetNumberField(TEXT("x"), Piece.X);
         (*PieceObj)->TryGetNumberField(TEXT("y"), Piece.Y);
 
-        // Guardar la pieza en el array final
-        PiecesStruct.Add(Piece);
+        PiecesStruct.Add(Piece);    // Añadir la pieza al array final
     }
 
-    // No se ha añadido ninguna pieza
+    // Array vacío, no se han recibido piezas
     if (PiecesStruct.Num() == 0) {
         UE_LOG(LogTemp, Warning, TEXT("No se ha recibido ninguna pieza"));
-        //return;
     }
 
     // Llamar al evento del BP pasándole el array de estructuras
     OnPiecesReceived(PiecesStruct);
 
-
     // Si existe el componente PieceSpawnerComponent actualizarlo
-    UPieceSpawnerComponent* PieceSpawner = FindComponentByClass<UPieceSpawnerComponent>();
-    if (PieceSpawner) {
+    if (IsValid(PieceSpawner)) {
         PieceSpawner->UpdatePieces(PiecesStruct);
     }
 }
 
+/* Detiene el receptor UDP y cierra y destruye el socket UDP */
 void AUDPReceiver::StopUDPReceiver() {
     if (UDPReceiver) {
         UDPReceiver->Stop();
         delete UDPReceiver;
         UDPReceiver = nullptr;
+        UE_LOG(LogTemp, Warning, TEXT("Receptor UDP detenido"));
     }
 
     if (Socket) {
@@ -144,6 +147,7 @@ void AUDPReceiver::StopUDPReceiver() {
     }
 }
 
+/* Se llama cuando el actor se destruye o se cambia de nivel, asegura el cierre */
 void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason) {
     Super::EndPlay(EndPlayReason);
     StopUDPReceiver();

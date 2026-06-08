@@ -1,3 +1,4 @@
+// UDPReceiver.h: recibe y parsea la info de las piezas que recibe por UDP
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,7 +8,7 @@
 
 class UPieceSpawnerComponent;   // Forward Declaration
 
-// Struct de 
+// Estructura de una pieza (color, x, y)
 USTRUCT(BlueprintType)
 struct FPieceData {
     GENERATED_USTRUCT_BODY()
@@ -16,11 +17,9 @@ struct FPieceData {
     FString Color;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    //float X;
     int32 X;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    //float Y;
     int32 Y;
 };
 
@@ -36,45 +35,55 @@ protected:
 
 public:
     //------------------------ VARIABLES ------------------------
-    // Iniciar el UDPReceiver en el BeginPlay
+    /* Iniciar el receptor UDP en el BeginPlay */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     bool bAutoStart = true;
 
-    // Nombre del socket
+    /* Nombre del socket */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     FString SocketName = TEXT("UDPReceiver");
 
-    // Dirección IP
+    /* Direccion IP */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     FString IP = TEXT("127.0.0.1");
 
-    // Puerto UDP
+    /* Puerto UDP */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     int32 Port = 5005;
 
-    // Tamaño del buffer de recepción (en bytes)
+    /* Tamaño del buffer de recepcion (bytes) - 2 MB */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
-    int32 BufferSize = 2097152; // 2 MB
+    int32 BufferSize = 2097152;
+
+    // Referencia al componente que spawnea las piezas
+    UPROPERTY(BlueprintReadOnly, Category = "UDP")
+    UPieceSpawnerComponent* PieceSpawner = nullptr;
 
     //------------------------ FUNCIONES ------------------------
-    // Inicia el receptor UDP (devuelve True si el receptor y el socket se iniciaron correctamente)
+    /* Inicia el receptor UDP (devuelve true si el socket y el receptor se crearon correctamente) */
     UFUNCTION(BlueprintCallable, Category = "UDP")
     bool StartUDPReceiver();
 
-    // Detiene el UDPReceiver y libera el socket
+    /* Detiene el receptor UDP y libera el socket */
     UFUNCTION(BlueprintCallable, Category = "UDP")
     void StopUDPReceiver();
 
+    /* Devuelve true si el receptor UDP está actualmente activo y escuchando */
+    UFUNCTION(BlueprintPure, Category = "UDP")
+    bool IsReceiving() const { return UDPReceiver != nullptr; }
+
+    /* Evento que se dispara cuando se recibe un nuevo array de piezas (incluso vacío) (hilo principal) */
     UFUNCTION(BlueprintImplementableEvent, Category = "UDP")
     void OnPiecesReceived(const TArray<FPieceData>& Pieces);
 
+    // Ejecutado cuando se destruye el actor, detiene el receptor UDP y cierra el socket
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
     FSocket* Socket;
     FUdpSocketReceiver* UDPReceiver;
 
-    // Callback que se ejecuta cuando llegan datos (en hilo secundario)
+    // Callback que se ejecuta en el hilo secundario cuando llegan datos
     void OnDataReceived(const FArrayReaderPtr& Message, const FIPv4Endpoint& EndPt);
 
     // Procesa el mensaje (en hilo principal)

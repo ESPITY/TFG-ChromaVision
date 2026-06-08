@@ -1,11 +1,11 @@
+// PieceSpawnerComponent.cpp
 #include "PieceSpawnerComponent.h"
 
-// Sets default values for this component's properties
 UPieceSpawnerComponent::UPieceSpawnerComponent() {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-// ubicar los modelos en el centro de la pieza
+// Convierte coordenadas de celda a absolutas en el mundo y centra el actor en la celda
 FVector UPieceSpawnerComponent::CellToWorld(int32 X, int32 Y) const {
     float CenterX = (X + 0.5f) * CellSize;
     float CenterY = (Y + 0.5f) * CellSize;
@@ -38,7 +38,7 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
 
     // Spawnear o mantener los que sí están
     for (const FPieceData& Piece : Pieces) {
-        // Mirar que actor corresponde a cada pieza (color)
+        // Mirar que clase de actor está asginada al color de la pieza
         FIntPoint Cell(Piece.X, Piece.Y);
         TSubclassOf<AActor>* ActorClass = ColorToActor.Find(Piece.Color);
         if (!ActorClass) {
@@ -48,6 +48,15 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
 
         AActor *ExistingActor = CurrentActorsByCell.FindRef(Cell); // Buscar si ya existe un actor en la celda
 
+        // Si la clase asignada es None, no debe haber actor en esa celda. Si ya había uno se borra y no se hace nada más
+        if (!*ActorClass) {
+            if (ExistingActor) {
+                ExistingActor->Destroy();
+                CurrentActorsByCell.Remove(Cell);
+            }
+            continue;
+        }
+
         // Si ya existe y es de la misma clase, se mantiene
         if (ExistingActor && ExistingActor->GetClass() == *ActorClass)
             continue;
@@ -56,12 +65,21 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
         if (ExistingActor)
             ExistingActor->Destroy();
 
-        // Spawnear nuevo
+        // Spawnear nuevo actor
+        if (!GetWorld()) {
+            UE_LOG(LogTemp, Error, TEXT("No se pudo obtener el mundo para spawnear el actor"));
+            continue;
+        }
         AActor* NewActor = GetWorld()->SpawnActor<AActor>(*ActorClass, CellToWorld(Cell.X, Cell.Y), FRotator::ZeroRotator);
-        CurrentActorsByCell.Add(Cell, NewActor);
+        if (NewActor) {
+            CurrentActorsByCell.Add(Cell, NewActor);
+        } else {
+            UE_LOG(LogTemp, Error, TEXT("Fallo al spawnear actor de clase %s"), *(*ActorClass)->GetName());
+        }
     }
 }
 
+// Elimina todos los actores spawneados y vacía el mapa
 void UPieceSpawnerComponent::ClearAllPieces() {
     for (auto& Pair : CurrentActorsByCell) {
         if (Pair.Value)
