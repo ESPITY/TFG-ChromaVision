@@ -11,12 +11,12 @@ DEFAULT_CONFIG = {
     # Color: nombre, lowerHSV, upperHSV, colorBGR
     "COLORS": [
         ["Rojo", [0, 200, 20], [9, 255, 255], [0, 0, 255]],
-        ["Amarillo", [20, 120, 50], [38, 255, 255], [0, 255, 255]],
+        ["Amarillo", [19, 120, 50], [38, 255, 255], [0, 255, 255]],
         ["Azul", [100, 150, 20], [120, 255, 255], [255, 190, 0]],
         ["Verde", [40, 130, 20], [100, 255, 255], [0, 255, 0]],
         ["Negro", [0, 0, 0], [179, 255, 35], [120, 120, 120]],
         ["Naranja", [9, 150, 120], [19, 255, 255], [0, 125, 255]],
-        ["Rosa", [120, 30, 130], [180, 90, 255], [190, 130, 250]]
+        ["Rosa", [135, 40, 130], [15, 150, 255], [190, 130, 250]]
     ],
     "WINDOW_SCALE": 1.0,            # Escalar el tamaño de las ventanas
     "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen base_warped

@@ -43,7 +43,8 @@ def main():
         frame_base_resized = cv2.resize(frame_base, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
         # Mensaje de estatus sobre el guardado de la configuración
         if config.status_config_msg and time.time() < config.status_expire:
-            cv2.putText(frame_base_resized, config.status_config_msg, (30, frame_base_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.putText(frame_base_resized, config.status_config_msg, (30, frame_base_resized.shape[0] - 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7 * config.WINDOW_SCALE, (0, 255, 255), 2)
         cv2.imshow("Base", frame_base_resized)
 
         # Perspectiva/Warp de la base y detección de piezas (colores y posición)
@@ -74,7 +75,8 @@ def main():
         frame_pieces_resized = cv2.resize(frame_pieces, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
         # Mensaje de estatus sobre el guardado de la configuración
         if config.status_config_msg and time.time() < config.status_expire:
-            cv2.putText(frame_pieces_resized, config.status_config_msg, (30, frame_pieces_resized.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.putText(frame_pieces_resized, config.status_config_msg, (30, frame_pieces_resized.shape[0] - 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7 * config.WINDOW_SCALE, (0, 255, 255), 2)
         cv2.imshow("Piezas", frame_pieces_resized)
 
         key = cv2.waitKey(1) & 0xFF
