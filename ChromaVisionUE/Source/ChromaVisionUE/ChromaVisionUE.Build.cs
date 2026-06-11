@@ -2,8 +2,8 @@
 
 using UnrealBuildTool;
 
-public class tfg3d : ModuleRules {
-	public tfg3d(ReadOnlyTargetRules Target) : base(Target)	{
+public class ChromaVisionUE : ModuleRules {
+	public ChromaVisionUE(ReadOnlyTargetRules Target) : base(Target)	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Sockets", "Networking", "Json" });

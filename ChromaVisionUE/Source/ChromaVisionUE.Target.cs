@@ -3,13 +3,13 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class tfg3dTarget : TargetRules
+public class ChromaVisionUETarget : TargetRules
 {
-	public tfg3dTarget(TargetInfo Target) : base(Target)
+	public ChromaVisionUETarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V6;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
-		ExtraModuleNames.Add("tfg3d");
+		ExtraModuleNames.Add("ChromaVisionUE");
 	}
 }

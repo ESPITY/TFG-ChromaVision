@@ -8,7 +8,7 @@
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TFG3D_API UPieceSpawnerComponent : public UActorComponent {
+class CHROMAVISIONUE_API UPieceSpawnerComponent : public UActorComponent {
 	GENERATED_BODY()
 
 public:
@@ -20,11 +20,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     TMap<FString, TSubclassOf<AActor>> ColorToActor;
 
-    /* Tamaño de celda en unidades Unreal (distancia entre centros) */
+    /* Tamaï¿½o de celda en unidades Unreal (distancia entre centros) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner", meta = (ClampMin = "1"))
     float CellSize = 100.0f;
 
-    /* Altura Z a la que spawnearán los actores */
+    /* Altura Z a la que spawnearï¿½n los actores */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     float SpawnHeight = 0.0f;
 
@@ -39,9 +39,9 @@ public:
     void ClearAllPieces();
 
 private:
-    // Almacena qué actor está en cada celda (clave = celda, valor = actor)
+    // Almacena quï¿½ actor estï¿½ en cada celda (clave = celda, valor = actor)
     TMap<FIntPoint, AActor*> CurrentActorsByCell;
 
-    // Convierte coordenadas de celda (X,Y) a posición en el mundo (centro de la celda)
+    // Convierte coordenadas de celda (X,Y) a posiciï¿½n en el mundo (centro de la celda)
     FVector CellToWorld(int32 X, int32 Y) const;		
 };

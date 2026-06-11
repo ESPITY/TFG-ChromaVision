@@ -24,7 +24,7 @@ struct FPieceData {
 };
 
 UCLASS()
-class TFG3D_API AUDPReceiver : public AActor {
+class CHROMAVISIONUE_API AUDPReceiver : public AActor {
     GENERATED_BODY()
 
 public:
@@ -51,7 +51,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     int32 Port = 5005;
 
-    /* Tamaño del buffer de recepcion (bytes) - 2 MB */
+    /* Tamaï¿½o del buffer de recepcion (bytes) - 2 MB */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     int32 BufferSize = 2097152;
 
@@ -68,11 +68,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UDP")
     void StopUDPReceiver();
 
-    /* Devuelve true si el receptor UDP está actualmente activo y escuchando */
+    /* Devuelve true si el receptor UDP estï¿½ actualmente activo y escuchando */
     UFUNCTION(BlueprintPure, Category = "UDP")
     bool IsReceiving() const { return UDPReceiver != nullptr; }
 
-    /* Evento que se dispara cuando se recibe un nuevo array de piezas (incluso vacío) (hilo principal) */
+    /* Evento que se dispara cuando se recibe un nuevo array de piezas (incluso vacï¿½o) (hilo principal) */
     UFUNCTION(BlueprintImplementableEvent, Category = "UDP")
     void OnPiecesReceived(const TArray<FPieceData>& Pieces);
 
