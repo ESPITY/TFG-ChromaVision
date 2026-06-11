@@ -11,16 +11,16 @@ class UPieceSpawnerComponent;   // Forward Declaration
 // Estructura de una pieza (color, x, y)
 USTRUCT(BlueprintType)
 struct FPieceData {
-    GENERATED_USTRUCT_BODY()
+    GENERATED_BODY()
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
     FString Color;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    int32 X;
+    int32 X = 0;
 
     UPROPERTY(BlueprintReadWrite, Category = "Piece")
-    int32 Y;
+    int32 Y = 0;
 };
 
 UCLASS()
