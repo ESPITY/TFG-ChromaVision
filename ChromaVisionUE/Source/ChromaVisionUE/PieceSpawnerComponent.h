@@ -16,7 +16,7 @@ public:
 
 public:
     //------------------------ VARIABLES ------------------------
-    /* Mapeo de color(string) de la pieza a clase actor que se spawnea(configurable en editor) */
+    /* Mapeo de color (string) de la pieza a clase actor que se spawnea (configurable en editor) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     TMap<FString, TSubclassOf<AActor>> ColorToActor;
 
@@ -39,7 +39,7 @@ public:
     void ClearAllPieces();
 
 private:
-    // Almacena qu� actor est� en cada celda (clave = celda, valor = actor)
+    // Almacena qu� actor esta en cada celda (clave = celda, valor = actor)
     TMap<FIntPoint, AActor*> CurrentActorsByCell;
 
     // Convierte coordenadas de celda (X,Y) a posici�n en el mundo (centro de la celda)

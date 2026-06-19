@@ -61,7 +61,7 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
         if (ExistingActor && ExistingActor->GetClass() == *ActorClass)
             continue;
 
-        // Si ya existe pero cmabió de clase, se sestruye
+        // Si ya existe pero cambió de clase, se sestruye
         if (ExistingActor)
             ExistingActor->Destroy();
 

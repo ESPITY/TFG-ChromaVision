@@ -14,13 +14,14 @@ def detect_base(frame):
     frame_low = cv2.resize(frame.copy(), None, fx=DETECT_FRAME_SCALE, fy=DETECT_FRAME_SCALE, interpolation=cv2.INTER_LINEAR)
 
     frame_grey = cv2.cvtColor(frame_low, cv2.COLOR_BGR2GRAY)        # Convertir el frame de BGR a escala de grises
-    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30)   # Reducir el ruido manteniendo bordes nítidos
+    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30)       # Reducir el ruido manteniendo bordes nítidos
     _, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
 
     # Morphological Operation - Close (erosion/dilation) - Eliminar ruido
     kernel = np.ones((5, 5), np.uint8)
     otsu_binary = cv2.morphologyEx(otsu_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
     
+    # Canny - Bordes
     edges = cv2.Canny(otsu_binary, 10, 20)
 
     # Aumentar el grosor de los bordes

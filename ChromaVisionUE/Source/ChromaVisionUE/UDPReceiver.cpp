@@ -98,7 +98,7 @@ void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
     // Lee el mensaje
     TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonRaw);
 
-    // Desserializar (convertir texto a JSON)
+    // Deserializar (convertir texto a JSON)
     if (!FJsonSerializer::Deserialize(JsonReader, JsonParsed) || !JsonParsed.IsValid()) {
         UE_LOG(LogTemp, Warning, TEXT("JSON inválido: %s"), *JsonRaw);
         return;

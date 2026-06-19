@@ -51,7 +51,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     int32 Port = 5005;
 
-    /* Tama�o del buffer de recepcion (bytes) - 2 MB */
+    /* Tamano del buffer de recepcion (bytes) - 2 MB */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP")
     int32 BufferSize = 2097152;
 
@@ -72,7 +72,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "UDP")
     bool IsReceiving() const { return UDPReceiver != nullptr; }
 
-    /* Evento que se dispara cuando se recibe un nuevo array de piezas (incluso vac�o) (hilo principal) */
+    /* Evento que se dispara cuando se recibe un nuevo array de piezas (incluso vacio) (hilo principal) */
     UFUNCTION(BlueprintImplementableEvent, Category = "UDP")
     void OnPiecesReceived(const TArray<FPieceData>& Pieces);
 
