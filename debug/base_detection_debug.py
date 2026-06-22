@@ -1,15 +1,21 @@
-# Detección de base (HoughLines)
+# Detección de base (HoughLines): código independiente sin reducción de resolución, pero con funciones de debug
+
+import os
+os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicialización más rápida de la webcam
+
 import cv2
 import numpy as np
 from itertools import combinations  # Combinaciones de posibles líneas perpendiculares
 
+WINDOW_SCALE = 1.0                  # Escalar el tamaño de las ventanas
+
 # Detecta la base
 def detect_base(frame, debug=False):
-    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convertir el frame de BGR a escala de grises
-    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30) # Reducir el ruido manteniendo bordes nítidos
+    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)            # Convertir el frame de BGR a escala de grises
+    frame_blur  = cv2.bilateralFilter(frame_grey, 20, 30, 30)       # Reducir el ruido manteniendo bordes nítidos
     ret, otsu_binary = cv2.threshold(frame_blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) # Convertir la imagen a binario
 
-    # Morphological Operation - Opening (erosion/dilation) - Eliminar ruido
+    # Morphological Operation - Close (erosion/dilation) - Eliminar ruido
     kernel = np.ones((5, 5), np.uint8)
     otsu_binary = cv2.morphologyEx(otsu_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
     
@@ -25,19 +31,16 @@ def detect_base(frame, debug=False):
     if lines is None:
         return None
     
-    unique_lines = remove_line_duplicates(lines)    # Eliminar líneas duplicadas
-
-    if len(unique_lines) < 4:   # Tras limpiar duplicados no hay 4 líneas únicas
+    unique_lines = remove_line_duplicates(lines)        # Eliminar líneas duplicadas
+    if len(unique_lines) < 4:                           # Después de limpiar duplicados debe haber mín. 4 líneas únicas
         return None
 
-    clusters = cluster_lines_by_angle(unique_lines)        # Agrupar líneas en dos grupos según theta
-
-    if len(clusters) != 2:  # Tras agrupar 2 clusters no hay
+    clusters = cluster_lines_by_angle(unique_lines)     # Agrupar líneas en dos grupos según theta
+    if len(clusters) != 2:                              # Tras agrupar 2 clusters
         return None
     
     cluster1, cluster2 = clusters
-    
-    if len(cluster1) < 2 or len(cluster2) < 2:  # Alguno de los dos clusters no tiene 2 líneas
+    if len(cluster1) < 2 or len(cluster2) < 2:          # Los 2 clusters deben tener al menos 2 líneas
         return None
 
     best_rectangle = None
@@ -65,8 +68,8 @@ def detect_base(frame, debug=False):
             if None in corners or not all(is_point_inside_frame(c, frame) for c in corners):
                 continue
 
-            corners_sorted = sort_corners_clockwise(corners)  # Ordenar esquinas
-            area = rectangle_area(corners_sorted)   # Calcular área
+            corners_sorted = sort_corners_clockwise(corners)    # Ordenar esquinas
+            area = rectangle_area(corners_sorted)               # Calcular área
             
             # Quedarse con el rectángulo de mayor área
             if area > max_area:
@@ -81,7 +84,7 @@ def detect_base(frame, debug=False):
 
     return best_rectangle
 
-# Dibujar y debuggear
+# Dibujar el rectángulo detectado y debug
 def draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug=False):
     if best_rectangle is None:
         if debug:
@@ -121,12 +124,34 @@ def draw_base(frame, best_rectangle, lines, unique_lines, clusters, debug=False)
     corners_array = np.array(corners, dtype=np.int32)
     cv2.polylines(frame, [corners_array], True, (0, 200, 255), 3)
     
-    # 6. Dibujar las esquinas y numerar - Azul/Blanco
+    # 6. Dibujar las esquinas y numerar - Azul
     for i, corner in enumerate(corners):
         corner_int = (int(np.round(corner[0])), int(np.round(corner[1])))
         cv2.circle(frame, corner_int, 8, (255, 200, 0), -1)
         if debug:
             cv2.putText(frame, str(i+1), (corner_int[0] + 10, corner_int[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+# Dibuja una línea infinita
+def draw_line(frame, line, color=(0, 0, 255), thickness=1):
+    rho, theta = line
+
+    a = np.cos(theta)
+    b = np.sin(theta)
+
+    x0 = a * rho    # rho * cos(tetha)
+    y0 = b * rho    # rho * sen(tetha)
+
+    # Longitud de la línea: hipotenusa según el teorema de Pitágoras
+    length = np.hypot(frame.shape[0], frame.shape[1])
+
+    # 1000 es la longitud de la línea
+    x1 = int(x0 + length * (-b))    # (r * cos(theta) - length * sin(theta))
+    y1 = int(y0 + length * (a))     # (rs * in(theta) + length * cos(theta))
+
+    x2 = int(x0 - length * (-b))    # (r * cos(theta) + length * sin(theta))
+    y2 = int(y0 - length * (a))     # (r * sin(theta) - length * cos(theta))
+
+    cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
 
 # Función auxiliar (debug): Asignar color a cada cluster según theta (V = verde | H = rojo)
 def assign_cluster_colors(clusters):
@@ -156,7 +181,7 @@ def assign_cluster_colors(clusters):
             
     return cluster_colors
 
-# Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 5º)
+# Eliminar duplicados, conservar las líneas superiores con más intersecciones (50 y 10º)
 def remove_line_duplicates(lines, rho_tolerance=50, theta_tolerance=np.radians(10)):
     unique_lines = []
     unique_norm_lines = []  # líneas únicas normalizadas para comparar
@@ -203,7 +228,7 @@ def cluster_lines_by_angle(lines, k=2):
     attempts = 10
     compactness, labels, centers = cv2.kmeans(pts, k, None, criteria, attempts,flags)
 
-    labels = labels.flatten()   # Array
+    labels = labels.flatten()           # Array
     clusters = [[] for _ in range(k)]   # [[], []]
     # zip para recorrer dos listas a la vez y agrupar valores de cada una
     for label, line in zip(labels, lines):
@@ -269,24 +294,47 @@ def rectangle_area(corners):
     
     return width * height
 
-# Dibuja una línea infinita
-def draw_line(frame, line, color=(0, 0, 255), thickness=1):
-    rho, theta = line
 
-    a = np.cos(theta)
-    b = np.sin(theta)
 
-    x0 = a * rho    # rho * cos(tetha)
-    y0 = b * rho    # rho * sen(tetha)
+# --------------------------------------------------- MAIN ---------------------------------------------------
 
-    # Longitud de la línea: hipotenusa según el teorema de Pitágoras
-    length = np.hypot(frame.shape[0], frame.shape[1])
+def main():
+    print("Iniciando webcam...")
 
-    # 1000 es la longitud de la línea
-    x1 = int(x0 + length * (-b))    # (r * cos(theta) - length * sin(theta))
-    y1 = int(y0 + length * (a))     # (rs * in(theta) + length * cos(theta))
+    # Webcam
+    stream =  cv2.VideoCapture(0)
+    if not stream.isOpened():
+        print("Error accediendo a la webcam")
+        exit()
 
-    x2 = int(x0 - length * (-b))    # (r * cos(theta) + length * sin(theta))
-    y2 = int(y0 - length * (a))     # (r * sin(theta) - length * cos(theta))
+    # Configurar: fps, altura/ancho de frames de la webcam y nº de frames almacenados en el buffer
+    stream.set(cv2.CAP_PROP_FPS , 30.0)
+    stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-    cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
+    while (True):
+        success, frame = stream.read()
+        if not success:
+            break
+
+        # Detección de la base (HoughLines)
+        frame_base = frame.copy()
+        detect_base(frame_base, True)
+        
+        frame_base = cv2.resize(frame_base, None, fx=WINDOW_SCALE, fy=WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        cv2.imshow("Base", frame_base)
+
+        key = cv2.waitKey(1) & 0xFF
+        # Cierre de todas las ventanas pulsando la tecla Escape (27) o pinchando en la X de alguna de las dos ventanas
+        if key == 27:
+            break
+        if cv2.getWindowProperty("Base", cv2.WND_PROP_VISIBLE) < 1:
+            break
+
+    stream.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
