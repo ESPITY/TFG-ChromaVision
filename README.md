@@ -1,8 +1,16 @@
-_Trabajo de Fin de Grado realizado por Lucía García Bobillo._
+<p align="center"><em>Trabajo de Fin de Grado realizado por Lucía García Bobillo.</em></p>
 
-# ChromaVision
+<h1 align="center">ChromaVision</h1>
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/ESPITY/TFG-ChromaVision/releases/tag/v1.0.0)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/77092aae-754a-41e3-aedf-21d524f32784" alt="Logo ChromaVision" width="400"/>
+</p>
+
+<p align="center">
+  <a href="https://github.com/ESPITY/TFG-ChromaVision/releases/tag/v1.0.0">
+    <img src="https://img.shields.io/badge/release-v1.0.0-blue" alt="Release"/>
+  </a>
+</p>
 
 ChromaVision es una herramienta modular basada en visión artificial, que permite detectar piezas físicas por color y posición,
 y visualizarlas en un motor de videojuegos de forma sincronizada. El color de cada pieza actúa como un identificador que permite
@@ -10,6 +18,13 @@ sustituirla por el tipo de objeto que el usuario desee en el motor.
 
 Esta herramienta sirve para desarrollar aplicaciones y videojuegos colaborativos con interfaz de usuario tangible (TUI), ofreciendo
 la capacidad de modificar los colores de piezas detectadas y los objetos 3D asignados.
+
+<p align="center">
+  <a href="https://luciagarbo.com/project/chromavision/">Vídeo de demostración</a>
+</p>
+
+
+---
 
 
 ## Arquitectura general del sistema
@@ -65,3 +80,5 @@ La documentación detallada (memoria del TFG y anexos) está disponible para des
 - Anexo D - Aplicación de prototipado de niveles (Unreal Engine)
 - Anexo E - Manual de usuario
 - Anexo F - Manual de programador
+
+---
