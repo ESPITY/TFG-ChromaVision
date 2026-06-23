@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # UDP Sender: envía información de las piezas (color y posición) al motor de videojuegos por UDP
 import socket
 import json

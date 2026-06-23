@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # Detección de base (HoughLines)
 import cv2
 import numpy as np

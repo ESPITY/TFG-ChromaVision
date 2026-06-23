@@ -1,3 +1,4 @@
+// ChromaVision - LucÃ­a GarcÃ­a Bobillo
 // PieceSpawnerComponent.cpp
 #include "PieceSpawnerComponent.h"
 
@@ -14,18 +15,18 @@ FVector UPieceSpawnerComponent::CellToWorld(int32 X, int32 Y) const {
 
 // Spawneo de piezas: borra las que sobram, deja las que permanecen y spawnea las que faltan
 void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
-    // Si llega un array vacío, no hay piezas, limpiar todo y salir
+    // Si llega un array vacï¿½o, no hay piezas, limpiar todo y salir
     if (Pieces.Num() == 0) {
         ClearAllPieces();
         return;
     }
 
-    // Guardar las coordenadas de las nuevas celdas en un set sin duplicados y más fácil de recorrer
+    // Guardar las coordenadas de las nuevas celdas en un set sin duplicados y mï¿½s fï¿½cil de recorrer
     TSet<FIntPoint> NewCells;
     for (const FPieceData& Piece : Pieces)
         NewCells.Add(FIntPoint(Piece.X, Piece.Y));
 
-    // Destruir actores que ya no están en las nuevas piezas
+    // Destruir actores que ya no estï¿½n en las nuevas piezas
     for (auto ActorIt = CurrentActorsByCell.CreateIterator(); ActorIt; ++ActorIt) {
         auto CellKey = ActorIt->Key;
         auto ActorValue = ActorIt->Value;
@@ -36,9 +37,9 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
         }
     }
 
-    // Spawnear o mantener los que sí están
+    // Spawnear o mantener los que sï¿½ estï¿½n
     for (const FPieceData& Piece : Pieces) {
-        // Mirar que clase de actor está asginada al color de la pieza
+        // Mirar que clase de actor estï¿½ asginada al color de la pieza
         FIntPoint Cell(Piece.X, Piece.Y);
         TSubclassOf<AActor>* ActorClass = ColorToActor.Find(Piece.Color);
         if (!ActorClass) {
@@ -48,7 +49,7 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
 
         AActor *ExistingActor = CurrentActorsByCell.FindRef(Cell); // Buscar si ya existe un actor en la celda
 
-        // Si la clase asignada es None, no debe haber actor en esa celda. Si ya había uno se borra y no se hace nada más
+        // Si la clase asignada es None, no debe haber actor en esa celda. Si ya habï¿½a uno se borra y no se hace nada mï¿½s
         if (!*ActorClass) {
             if (ExistingActor) {
                 ExistingActor->Destroy();
@@ -61,7 +62,7 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
         if (ExistingActor && ExistingActor->GetClass() == *ActorClass)
             continue;
 
-        // Si ya existe pero cambió de clase, se sestruye
+        // Si ya existe pero cambiï¿½ de clase, se sestruye
         if (ExistingActor)
             ExistingActor->Destroy();
 
@@ -79,7 +80,7 @@ void UPieceSpawnerComponent::UpdatePieces(const TArray<FPieceData> &Pieces) {
     }
 }
 
-// Elimina todos los actores spawneados y vacía el mapa
+// Elimina todos los actores spawneados y vacï¿½a el mapa
 void UPieceSpawnerComponent::ClearAllPieces() {
     for (auto& Pair : CurrentActorsByCell) {
         if (Pair.Value)

@@ -1,3 +1,4 @@
+// ChromaVision - Lucía García Bobillo
 // PieceSpawnerComponent.h: gestiona el spawneo de actores a partir de piezas recibidas
 #pragma once
 

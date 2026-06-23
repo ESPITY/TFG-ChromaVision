@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # Config: crea un archivo JSON cuando se ejecuta que permite modificar los valores por defecto
 import sys
 import os

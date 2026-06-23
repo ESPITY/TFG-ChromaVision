@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # Detección de piezas (colores y posición)
 import cv2
 import numpy as np

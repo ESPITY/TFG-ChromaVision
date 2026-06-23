@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # Warp de perspectiva de la imagen del área de la base
 import cv2
 import numpy as np

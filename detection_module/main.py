@@ -1,3 +1,4 @@
+# ChromaVision - Lucía García Bobillo
 # Main: lee la webcam, detecta la base, hace un warp de la base, detecta las piezas y las envía al motor de videojuegos por UDP
 import os
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicialización más rápida de la webcam

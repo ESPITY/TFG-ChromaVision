@@ -1,3 +1,4 @@
+// ChromaVision - LucÃ­a GarcÃ­a Bobillo
 // UDPReceiver.cpp
 #include "UDPReceiver.h"
 #include "Async/Async.h"
@@ -16,10 +17,10 @@ void AUDPReceiver::BeginPlay() {
     // Obtiene el componente que spawnea piezas
     PieceSpawner = FindComponentByClass<UPieceSpawnerComponent>();
     if (!PieceSpawner) {
-        UE_LOG(LogTemp, Warning, TEXT("No se encontró PieceSpawnerComponent"));
+        UE_LOG(LogTemp, Warning, TEXT("No se encontrï¿½ PieceSpawnerComponent"));
     }
 
-    // Si está activo inicia el receptor UDP en el Begin Play
+    // Si estï¿½ activo inicia el receptor UDP en el Begin Play
     if (bAutoStart) {
         bool bSuccess = StartUDPReceiver();
         if (!bSuccess) {
@@ -29,19 +30,19 @@ void AUDPReceiver::BeginPlay() {
 }
 
 /* Inicia el receptor UDP: crea un socket UDP (IP, puerto),
- * configura el receptor asíncrono en un hilo secundario
+ * configura el receptor asï¿½ncrono en un hilo secundario
  * y anlaza el callback OnPiecesReceived */
 bool AUDPReceiver::StartUDPReceiver() {
-    // Comprobar si el receptor UDP ya está activo
+    // Comprobar si el receptor UDP ya estï¿½ activo
     if (UDPReceiver) {
-        UE_LOG(LogTemp, Warning, TEXT("Receptor UDP ya está activo"));
+        UE_LOG(LogTemp, Warning, TEXT("Receptor UDP ya estï¿½ activo"));
         return true;
     }
 
-    // Validar la dirección IP
+    // Validar la direcciï¿½n IP
     FIPv4Address Addr;
     if (!FIPv4Address::Parse(IP, Addr)) {
-        UE_LOG(LogTemp, Error, TEXT("IP inválida: %s"), *IP);
+        UE_LOG(LogTemp, Error, TEXT("IP invï¿½lida: %s"), *IP);
         return false;
     }
 
@@ -59,7 +60,7 @@ bool AUDPReceiver::StartUDPReceiver() {
         return false;
     }
 
-    // Crear el receptor UDP asíncrono (hiilo secundario)
+    // Crear el receptor UDP asï¿½ncrono (hiilo secundario)
     FTimespan ThreadWaitTime = FTimespan::FromMilliseconds(100);
     UDPReceiver = new FUdpSocketReceiver(Socket, ThreadWaitTime, TEXT("UDP RECEIVER"));
     UDPReceiver->OnDataReceived().BindUObject(this, &AUDPReceiver::OnDataReceived);
@@ -76,7 +77,7 @@ void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4End
     const uint8* RawData = Message->GetData();
     FString ReceivedData = FString(NumBytes, UTF8_TO_TCHAR(reinterpret_cast<const char*>(RawData)));
 
-    // Limpiar todos los caracteres que haya después de la última llave "}" (aparece basura durante la comunicación UDP)
+    // Limpiar todos los caracteres que haya despuï¿½s de la ï¿½ltima llave "}" (aparece basura durante la comunicaciï¿½n UDP)
     int32 LastBracket = -1;
     if (!ReceivedData.FindLastChar('}', LastBracket)) return;
     ReceivedData = ReceivedData.Left(LastBracket + 1);
@@ -87,27 +88,27 @@ void AUDPReceiver::OnDataReceived(const FArrayReaderPtr& Message, const FIPv4End
 /* Procesa el mensaje JSON en el hilo principal: parsea, extrae array "pieces", convierte cada objeto a
  * FPieceData, notifica a Blueprint mediante OnPiecesReceived y actualiza el PieceSpawnerComponent si existe */
 void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
-    // Verificar que el objeto sigue vivo y que el mundo no está siendo desmontado
+    // Verificar que el objeto sigue vivo y que el mundo no estï¿½ siendo desmontado
     if (!IsValid(this) || !GetWorld() || GetWorld()->bIsTearingDown) {
-        UE_LOG(LogTemp, Warning, TEXT("ProcessMessage abortado: objeto inválido o mundo en destruído"));
+        UE_LOG(LogTemp, Warning, TEXT("ProcessMessage abortado: objeto invï¿½lido o mundo en destruï¿½do"));
         return;
     }
 
-    // Almacenará el objeto JSON parseado
+    // Almacenarï¿½ el objeto JSON parseado
     TSharedPtr<FJsonObject> JsonParsed;
     // Lee el mensaje
     TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonRaw);
 
     // Deserializar (convertir texto a JSON)
     if (!FJsonSerializer::Deserialize(JsonReader, JsonParsed) || !JsonParsed.IsValid()) {
-        UE_LOG(LogTemp, Warning, TEXT("JSON inválido: %s"), *JsonRaw);
+        UE_LOG(LogTemp, Warning, TEXT("JSON invï¿½lido: %s"), *JsonRaw);
         return;
     }
 
     // Extraer el array "pieces"
     const TArray<TSharedPtr<FJsonValue>> *PiecesArray;
     if (!JsonParsed->TryGetArrayField(TEXT("pieces"), PiecesArray)) {
-        UE_LOG(LogTemp, Warning, TEXT("No se encontró el campo 'pieces' en el JSON"));
+        UE_LOG(LogTemp, Warning, TEXT("No se encontrï¿½ el campo 'pieces' en el JSON"));
         return;
     }
 
@@ -125,15 +126,15 @@ void AUDPReceiver::ProcessMessage(const FString& JsonRaw) {
         (*PieceObj)->TryGetNumberField(TEXT("x"), Piece.X);
         (*PieceObj)->TryGetNumberField(TEXT("y"), Piece.Y);
 
-        PiecesStruct.Add(Piece);    // Añadir la pieza al array final
+        PiecesStruct.Add(Piece);    // Aï¿½adir la pieza al array final
     }
 
-    // Array vacío, no se han recibido piezas
+    // Array vacï¿½o, no se han recibido piezas
     if (PiecesStruct.Num() == 0) {
         UE_LOG(LogTemp, Warning, TEXT("No se ha recibido ninguna pieza"));
     }
 
-    // Llamar al evento del BP pasándole el array de estructuras
+    // Llamar al evento del BP pasï¿½ndole el array de estructuras
     OnPiecesReceived(PiecesStruct);
 
     // Si existe el componente PieceSpawnerComponent actualizarlo
