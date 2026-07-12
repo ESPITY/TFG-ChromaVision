@@ -19,11 +19,12 @@ DEFAULT_CONFIG = {
         ["Naranja", [9, 150, 120], [19, 255, 255], [0, 125, 255]],
         ["Rosa", [125, 40, 125], [15, 150, 255], [190, 130, 250]]
     ],
+    "WEBCAM_INDEX": 0,              # Índice de la webcam
     "WINDOW_SCALE": 1.0,            # Escalar el tamaño de las ventanas
     "WARP_OUTPUT_SIZE": 800,        # Tamaño del lado más largo de la imagen base_warped
     "GRID_WIDTH": 16,               # 16x16 celdas (base 32x32 studs)
     "GRID_HEIGHT": 16,
-    "PERCENT_FILLED_CELL": 0.6,     # % de relleno de color de la celda para considerarla ocupada
+    "PERCENT_FILLED_CELL": 0.65,     # % de relleno de color de la celda para considerarla ocupada
     "MIN_BASE_AREA_RATIO": 0.05,    # % mínimo del frame que debe ocupar la base
     "SHOW_PIECES_GRID": True,       # Mostrar la cuadrícula de la ventana "Piezas"
     "UDP_IP": "127.0.0.1",          # IP de la conexión por socket UDP
@@ -64,7 +65,7 @@ def save_config(config_path, data):
 
 # Asigna las variables del diccionario de "config.json"
 def apply_config(config_dict):
-    global COLORS, WINDOW_SCALE, WARP_OUTPUT_SIZE, GRID_WIDTH, GRID_HEIGHT
+    global COLORS, WEBCAM_INDEX, WINDOW_SCALE, WARP_OUTPUT_SIZE, GRID_WIDTH, GRID_HEIGHT
     global PERCENT_FILLED_CELL, MIN_BASE_AREA_RATIO, SHOW_PIECES_GRID
     global UDP_IP, UDP_PORT
 
@@ -76,6 +77,7 @@ def apply_config(config_dict):
         color_BGR = tuple(color[3])
         COLORS.append([name, lower_HSV, upper_HSV, color_BGR])
 
+    WEBCAM_INDEX = int(config_dict["WEBCAM_INDEX"])
     WINDOW_SCALE = float(config_dict["WINDOW_SCALE"])
     WARP_OUTPUT_SIZE = int(config_dict["WARP_OUTPUT_SIZE"])
     GRID_WIDTH = int(config_dict["GRID_WIDTH"])

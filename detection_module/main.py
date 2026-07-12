@@ -6,6 +6,7 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 import time
+import sys
 
 import config
 from color_detection import get_masks, detect_pieces_grid
@@ -18,10 +19,10 @@ def main():
     print("Iniciando webcam...")
 
     # Webcam
-    stream =  cv2.VideoCapture(0)
+    stream =  cv2.VideoCapture(config.WEBCAM_INDEX)
     if not stream.isOpened():
         print("Error accediendo a la webcam")
-        exit()
+        sys.exit()
 
     # Configurar: fps, altura/ancho de frames de la webcam y nº de frames almacenados en el buffer
     stream.set(cv2.CAP_PROP_FPS , 30.0)
