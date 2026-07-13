@@ -6,7 +6,6 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"    # Inicializació
 import cv2
 import numpy as np
 import time
-import sys
 
 import config
 from color_detection import get_masks, detect_pieces_grid
@@ -22,7 +21,19 @@ def main():
     stream =  cv2.VideoCapture(config.WEBCAM_INDEX)
     if not stream.isOpened():
         print("Error accediendo a la webcam")
-        sys.exit()
+
+        # Mostrar ventana de error cuando no se pueda acceder a la webcam
+        webcam_error_img = np.zeros((260, 820, 3), dtype=np.uint8)
+        cv2.putText(webcam_error_img, "Error: no se pudo acceder a la webcam", (40, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (69, 69, 255), 1)
+        cv2.putText(webcam_error_img, "Compruebe que esta enchufada o configure 'WEBCAM_INDEX' en 'config.json'", (40, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        cv2.putText(webcam_error_img, "Presione cualquier tecla para salir...", (40, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        
+        webcam_error_img_resized = cv2.resize(webcam_error_img, None, fx=config.WINDOW_SCALE, fy=config.WINDOW_SCALE, interpolation=cv2.INTER_LINEAR)
+        cv2.imshow("ChromaVision", webcam_error_img_resized)
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        return
 
     # Configurar: fps, altura/ancho de frames de la webcam y nº de frames almacenados en el buffer
     stream.set(cv2.CAP_PROP_FPS , 30.0)
