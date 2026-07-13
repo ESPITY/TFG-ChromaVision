@@ -23,6 +23,10 @@ la capacidad de modificar los colores de piezas detectadas y los objetos 3D asig
   <a href="https://luciagarbo.com/project/chromavision/">Vídeo de demostración</a>
 </p>
 
+<br>
+
+<img width="5119" height="1440" alt="Demo ChromaVision" src="https://github.com/user-attachments/assets/f6fa76fe-fbd3-411a-a55d-43ec4c0de0c6"/>
+
 
 ---
 
