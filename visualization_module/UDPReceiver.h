@@ -1,4 +1,4 @@
-// ChromaVision - Lucía García Bobillo
+// ChromaVision - Lucia Garcia Bobillo
 // UDPReceiver.h: recibe y parsea la info de las piezas que recibe por UDP
 #pragma once
 
@@ -69,7 +69,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UDP")
     void StopUDPReceiver();
 
-    /* Devuelve true si el receptor UDP est� actualmente activo y escuchando */
+    /* Devuelve true si el receptor UDP esta actualmente activo y escuchando */
     UFUNCTION(BlueprintPure, Category = "UDP")
     bool IsReceiving() const { return UDPReceiver != nullptr; }
 

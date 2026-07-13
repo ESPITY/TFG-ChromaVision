@@ -1,4 +1,4 @@
-// ChromaVision - Lucía García Bobillo
+// ChromaVision - Lucia Garcia Bobillo
 // PieceSpawnerComponent.h: gestiona el spawneo de actores a partir de piezas recibidas
 #pragma once
 
@@ -21,7 +21,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner")
     TMap<FString, TSubclassOf<AActor>> ColorToActor;
 
-    /* Tama�o de celda en unidades Unreal (distancia entre centros) */
+    /* Tamano de celda en unidades Unreal (distancia entre centros) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piece Spawner", meta = (ClampMin = "1"))
     float CellSize = 100.0f;
 
