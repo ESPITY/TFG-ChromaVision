@@ -78,6 +78,8 @@ def apply_config(config_dict):
         COLORS.append([name, lower_HSV, upper_HSV, color_BGR])
 
     WEBCAM_INDEX = int(config_dict["WEBCAM_INDEX"])
+    if WEBCAM_INDEX < 0: raise ValueError("WEBCAM_INDEX no puede ser negativo")
+    
     WINDOW_SCALE = float(config_dict["WINDOW_SCALE"])
     WARP_OUTPUT_SIZE = int(config_dict["WARP_OUTPUT_SIZE"])
     GRID_WIDTH = int(config_dict["GRID_WIDTH"])
