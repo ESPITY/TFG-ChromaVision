@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ESPITY/TFG-ChromaVision/releases/tag/v1.0.0">
-    <img src="https://img.shields.io/badge/release-v1.0.0-blue" alt="Release"/>
+  <a href="https://github.com/ESPITY/TFG-ChromaVision/releases/tag/v1.0.1">
+    <img src="https://img.shields.io/badge/release-v1.0.1-blue" alt="Release"/>
   </a>
 </p>
 
